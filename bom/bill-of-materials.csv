@@ -1,0 +1,20 @@
+Category,Item,Quantity,Required,Recommended Product,Product Link,Estimated Price,Alternative Product,Alternative Link,Notes
+Electronics,ESP32 DevKit V1 (38-pin),1,Yes,ESP32 DevKit V1,[Needs verification],~$5-8,ESP32 30-pin,[Needs verification],Avoid S2/C3/CAM unless adapting firmware
+Electronics,1kg bar load cell,1,Yes,1kg load cell + HX711 kit,[Needs verification],$2-6,5kg cell (more headroom; slightly coarser),[Needs verification],Bar-cell kits often bundle HX711 + 2 discs + nylon columns + M3x10 screws + Dupont
+Electronics,HX711 amplifier module,1,Yes,HX711 module,[Needs verification],$1-2,HX711 with screw terminals,[Needs verification],Screw-terminal version avoids soldering the cell
+Display,SSD1306 0.96in I2C OLED 128x64,1,Yes,SSD1306 OLED I2C,[Needs verification],$4-7,1.3in SH1106 OLED,[Needs verification],Addr usually 0x3C; firmware tries 0x3D too
+Input,Momentary tactile push button 6mm,1,Yes,Tactile push button,[Needs verification],$0.50,Arcade-style button,[Needs verification],Internal pull-ups used; no resistor needed
+Input,Second button (tare/calibrate),1,No,Tactile push button,[Needs verification],$0.50,,,Lets you calibrate without reflashing
+Prototyping,Half-size breadboard,1,Yes,Half-size breadboard,[Needs verification],$3-5,,,
+Prototyping,Dupont jumper wires set,1,Yes,Jumper wires M-F F-F,[Needs verification],$3-5,,,
+Power,USB data cable,1,Yes,USB cable (match ESP32 port),[Needs verification],$3,,,Charge-only cables will not work
+Power,5V 1A USB wall adapter,1,Yes,5V USB adapter,[Needs verification],$5-8,Any phone charger,,
+3D Printing,PLA filament,30-60g,Yes,PLA filament,[Needs verification],~$1,PETG,,Consider wipeable top or silicone coaster
+Fasteners,M3x10 screws (often included in kit),1 set,Yes,Often included with bar-cell kit,,$0,,,Bar-cell kits often include nylon guide columns + discs for the cantilever
+Consumables,Double-sided tape,1,No,Mounting tape,[Needs verification],$3,,,Mount HX711 to base
+Consumables,Silicone coaster for platform,1,No,Silicone coaster,[Needs verification],$2,,,Wipeable food-friendly surface for drips
+Tools,Soldering iron + solder,1,Yes,Soldering iron kit,[Needs verification],$15-30,Pre-wired load cell kit,,One-time; skip if buying screw-terminal HX711
+Tools,Known calibration weight,1,Yes,Measured 250mL water = 250g,,$0,Scale-verified object,,Used once during calibration
+Optional,Slide switch (feed-type tag),1,No,Slide switch,[Needs verification],$0.50,,,Phase 2 - formula vs breastmilk
+Optional,LiPo + TP4056 charger,1,No,LiPo battery + TP4056,[Needs verification],$6,,,Phase 4 - portability
+Optional,Raspberry Pi Zero 2 W,1,No,Pi Zero 2 W,[Needs verification],~$15,,,Phase 3 - daily summaries/dashboard

@@ -1,0 +1,76 @@
+// =============================================================================
+// Bottle Feed Logger — Configuration
+//
+// 1. Copy this file to `config.h` in the same directory.
+// 2. Fill in your Wi-Fi and Notion details below.
+// 3. `config.h` is gitignored so your secrets won't be committed.
+// =============================================================================
+
+#pragma once
+
+// -----------------------------------------------------------------------------
+// Wi-Fi (2.4 GHz only)
+// -----------------------------------------------------------------------------
+#define WIFI_SSID      "YourWiFiName"
+#define WIFI_PASSWORD  "YourWiFiPassword"
+
+// -----------------------------------------------------------------------------
+// Notion
+//
+// NOTION_TOKEN: from notion.so/my-integrations -> your integration ->
+//               "Internal Integration Secret" (starts with ntn_ or secret_)
+// NOTION_DB_ID: the 32-char hex chunk in your database URL, before the "?"
+//               notion.so/<workspace>/<NOTION_DB_ID>?v=...
+//
+// Remember to share the database WITH the integration:
+//   open the DB as a page -> ••• menu -> Connections -> add your integration.
+// -----------------------------------------------------------------------------
+#define NOTION_TOKEN   "PASTE_YOUR_NOTION_INTEGRATION_TOKEN"
+#define NOTION_DB_ID   "PASTE_YOUR_32CHAR_DATABASE_ID"
+#define NOTION_VERSION "2022-06-28"   // verify current version at developers.notion.com
+
+// Property names — must EXACTLY match your Notion database column names.
+#define PROP_TITLE     "Name"
+#define PROP_START     "Start"
+#define PROP_END       "End"
+#define PROP_DURATION  "Duration (min)"
+#define PROP_VOLUME    "Volume (mL)"
+#define PROP_NOTES     "Notes"
+
+// -----------------------------------------------------------------------------
+// Time zone: set the GMT/DST offsets for your region (default below = US/Canada Eastern)
+//   Standard time is UTC-5; daylight saving adds 1 hour.
+// -----------------------------------------------------------------------------
+#define GMT_OFFSET_SEC  (-5 * 3600)
+#define DST_OFFSET_SEC  (3600)
+#define NTP_SERVER      "pool.ntp.org"
+
+// -----------------------------------------------------------------------------
+// Optional Telegram confirmation (set ENABLE_TELEGRAM to 1 to use)
+// -----------------------------------------------------------------------------
+#define ENABLE_TELEGRAM 0
+#define BOT_TOKEN       "PASTE_TELEGRAM_BOT_TOKEN_IF_USED"
+#define CHAT_ID         "PASTE_TELEGRAM_CHAT_ID_IF_USED"
+
+// -----------------------------------------------------------------------------
+// Calibration
+//
+// DEFAULT_CALIBRATION_FACTOR is only used the very first time, before you run
+// the guided calibration (which saves the real value to flash). Leave as-is.
+//
+// CALIBRATION_KNOWN_WEIGHT_G is the weight you'll place during calibration.
+// 250 g (a measured 250 mL of water) is convenient and accurate.
+// -----------------------------------------------------------------------------
+#define DEFAULT_CALIBRATION_FACTOR   420.0f
+#define CALIBRATION_KNOWN_WEIGHT_G   250.0f
+
+// -----------------------------------------------------------------------------
+// Feed sanity limits (reject accidental double-taps / nonsense)
+// -----------------------------------------------------------------------------
+#define MIN_FEED_ML   5.0f
+#define MAX_FEED_ML   400.0f
+
+// -----------------------------------------------------------------------------
+// Smoothing — how many HX711 samples to average per reading
+// -----------------------------------------------------------------------------
+#define SAMPLES_PER_READING  10
