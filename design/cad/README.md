@@ -2,7 +2,7 @@
 
 The stand has two printed parts: a **base** (holds the electronics, sits on the counter) and a **platform** (the bottle sits on this). The load cell bridges them in a cantilever.
 
-> **Heads-up for your 5 kg kit:** it already includes the cantilever hardware (2 discs + nylon columns + M3 screws). That assembly handles the load-cell mounting, so you may not need precise printed mounting bosses at all — you mainly need a stable base under the bottom disc and a flat bottle surface on the top disc. The printed parts below are then optional/cosmetic. If you do print, set `cell_hole_dia = 3.4` (M3) in the OpenSCAD file.
+> **If your kit includes the cantilever hardware** (common with 5 kg bar kits: 2 discs + nylon columns + M3 screws), that assembly handles the load-cell mounting, so you may not need precise printed mounting bosses: you mainly need a stable base under the bottom disc and a flat bottle surface on the top disc. The printed parts below are then optional/cosmetic. If you do print, set `cell_hole_dia = 3.4` (M3) in the OpenSCAD file.
 
 ## Two ways to get the stand
 

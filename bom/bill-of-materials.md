@@ -12,10 +12,10 @@ Prices approximate, USD unless noted. `[Needs verification]` = confirm before bu
 - **Notes:** 30-pin variant fine. Avoid S2/C3/CAM unless you adapt the firmware.
 
 ### Load cell
-- **Item:** 5 kg bar-type load cell (your kit) — a 1 kg cell is slightly finer but 5 kg is fine
+- **Item:** 1 kg bar-type load cell (recommended). A 5 kg bar cell also works (slightly coarser, but plenty for ±5 mL) and often comes as a kit with the mount.
 - **Qty:** 1 · **Required:** Yes
 - **Est:** $2–6 · **Where:** sold as a kit with the HX711 + mounting hardware
-- **Notes:** Your kit bundles the HX711, 2 discs, 5 nylon guide columns, 2× M3×10 screws, Dupont cable, and a (not-needed) display module. 5 kg gives lots of headroom; resolution after averaging is ~1–2 g, well within ±5 mL.
+- **Notes:** Many bar-cell kits bundle the HX711, 2 discs, nylon guide columns, M3×10 screws, and a Dupont cable. Resolution after averaging is ~1-2 g, well within ±5 mL. A 1 kg cell is a touch finer; a 5 kg cell has more headroom.
 
 ### Load cell amplifier
 - **Item:** HX711 module
