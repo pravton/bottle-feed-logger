@@ -15,7 +15,7 @@ The load cell has four thin wires. Solder them to the HX711's measurement pads:
 | White | A− | Signal − |
 | Green | A+ | Signal + |
 
-> **Verify your colors:** the mapping above (red→E+, black→E−, green→A+, white→A−) is typical for bar load cells, but colors vary by manufacturer, so check your cell's datasheet. If readings come out negative, swap A+ and A−.
+> **Verify your colors:** the mapping above (red→E+, black→E−, green→A+, white→A−) is typical for bar load cells, but colors vary by manufacturer, so check your cell's datasheet.
 >
 > If readings ever come out **negative or backwards**, swap A+ and A− (or just negate in software).
 

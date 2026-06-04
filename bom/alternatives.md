@@ -9,7 +9,7 @@ Component and approach swaps, with trade-offs.
 | **1 kg (recommended)** | Headroom for full bottle + glass; sub-gram resolution | — | **Pick this** |
 | 500 g | Slightly finer resolution | Risk of overload with a heavy glass bottle + full feed | Only if plastic bottles only |
 | 2 kg | Lots of headroom | Coarser resolution (still fine for mL) | Acceptable fallback |
-| 5 kg+ | Robust; 5 kg kits often bundle the mount | Coarser resolution | 5 kg is fine; 10 kg+ is overkill |
+| 5 kg | Robust; 5 kg kits often bundle the mount | Coarser resolution | 5 kg is fine; 10 kg+ is overkill |
 
 ## Amplifier
 

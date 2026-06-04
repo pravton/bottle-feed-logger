@@ -33,7 +33,7 @@ A bar load cell measures weight by **bending slightly**. For it to bend, it must
 - The load cell has an **arrow** indicating the direction of force — it should point **down** (the direction the weight pushes).
 - **Do not press the white latex/sealed part** of the cell directly: it protects the strain gauge.
 
-**If your kit came with the disc-and-column hardware, you don't build this from scratch.** The 2 discs + nylon columns + M3 screws assemble the bar in exactly this cantilever arrangement: one end of the bar screws to the bottom disc, the other end to the top disc, with the columns holding the gap. That sub-assembly *is* the cantilever. Then you just need to (a) sit the bottom disc on a stable base and (b) put a flat surface on the top disc for the bottle. A MakerWorld "load cell scale" print works too, or printed parts if your kit has no mounting hardware.
+**If your kit came with the disc-and-column hardware, you don't build this from scratch.** The 2 discs + nylon columns + M3 screws assemble the bar in exactly this cantilever arrangement: one end of the bar screws to the bottom disc, the other end to the top disc, with the columns holding the gap. That sub-assembly *is* the cantilever. Then you just need to (a) sit the bottom disc on a stable base and (b) put a flat surface on the top disc for the bottle. A MakerWorld "load cell scale" print works too. If your kit has **no** mounting hardware, skip the disc-and-column steps below and follow the printed-mount approach in `design/cad/README.md` (Option B).
 
 ## Assembly order
 
