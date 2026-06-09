@@ -21,6 +21,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiManager.h>
+#include <ArduinoOTA.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <Wire.h>
@@ -101,6 +102,7 @@ void   setupWifi(bool forcePortal);
 void   runWifiPortal(bool onDemand);
 String wifiStatusStr(wl_status_t s);
 void   ensureWifi();
+void   setupOTA();
 bool   syncTime();
 bool   timeIsValid();
 String isoTimestamp(time_t t);
@@ -173,6 +175,9 @@ void setup() {
     setupWifi(forcePortal);
     secured.setInsecure();   // v1: skip cert validation (harden with setCACert for production)
 
+    // ---- OTA (Wi-Fi firmware updates, no cable needed after this flash) ----
+    setupOTA();
+
     // ---- Time ----
     if (syncTime()) Serial.println(F("NTP time synced"));
     else            Serial.println(F("NTP sync failed — will retry"));
@@ -184,10 +189,14 @@ void setup() {
 // LOOP
 // =============================================================================
 void loop() {
+    // Service OTA so a Wi-Fi firmware push can interrupt normal operation.
+    ArduinoOTA.handle();
+
     // Wi-Fi health
     if (millis() - lastWifiCheck > 30000) {
         lastWifiCheck = millis();
         ensureWifi();
+        setupOTA();   // start OTA if Wi-Fi came up after boot (no-op once started)
         // Re-kick NTP if Wi-Fi is up but time never synced (e.g. Wi-Fi came up
         // after boot). configTime() is non-blocking; SNTP fills time in the
         // background. Without this, timeIsValid() stays false and feeds are
@@ -556,6 +565,31 @@ void ensureWifi() {
     if (WiFi.status() == WL_CONNECTED) return;
     // Let WiFiManager's stored credentials reconnect; don't block the loop.
     WiFi.reconnect();
+}
+
+// Enable Over-The-Air updates: once this firmware is running, future builds can
+// be pushed over Wi-Fi (PlatformIO: upload_protocol = espota) with no cable.
+// The device appears as "bottle-feed-logger" on the network. Safe to call
+// repeatedly: it only starts once, and only after Wi-Fi is up (so it also works
+// when Wi-Fi connects after boot, called from the loop's health check).
+void setupOTA() {
+    static bool otaStarted = false;
+    if (otaStarted || WiFi.status() != WL_CONNECTED) return;
+
+    ArduinoOTA.setHostname("bottle-feed-logger");
+    // Require a password if OTA_PASSWORD is set in config.h. Without it, anyone on
+    // the LAN could push firmware — strongly recommended to set one.
+#ifdef OTA_PASSWORD
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+#else
+    Serial.println(F("WARNING: OTA has no password (set OTA_PASSWORD in config.h)"));
+#endif
+    ArduinoOTA.onStart([]() { drawMessage("OTA update", "receiving..."); });
+    ArduinoOTA.onEnd([]()   { drawMessage("OTA update", "done, reboot"); });
+    ArduinoOTA.onError([](ota_error_t e) { drawMessage("OTA failed", String("err ") + e); });
+    ArduinoOTA.begin();
+    otaStarted = true;
+    Serial.println(F("OTA ready: bottle-feed-logger"));
 }
 
 // =============================================================================

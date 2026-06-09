@@ -2,8 +2,8 @@
 // Bottle Feed Logger — Configuration
 //
 // 1. Copy this file to `config.h` in the same directory.
-// 2. Fill in your Notion details below (and optionally Telegram). Wi-Fi is NOT
-//    set here anymore — it's configured on-device via
+// 2. Fill in your Notion details below (and optionally Telegram + an OTA
+//    password). Wi-Fi is NOT set here anymore — it's configured on-device via
 //    the setup portal (see the Wi-Fi section below); the WIFI_* defines are
 //    legacy and unused.
 // 3. `config.h` is gitignored so your secrets won't be committed.
@@ -23,6 +23,19 @@
 // -----------------------------------------------------------------------------
 #define WIFI_SSID      "YourWiFiName"
 #define WIFI_PASSWORD  "YourWiFiPassword"
+
+// -----------------------------------------------------------------------------
+// OTA (over-the-air firmware updates over Wi-Fi)
+//
+// Once flashed, future updates can be pushed over Wi-Fi (no USB cable) using the
+// dedicated OTA env defined in platformio.ini:
+//   pio run -e ota -t upload
+// (If OTA_PASSWORD is set below, add: --upload-flags --auth=<password>)
+//
+// SECURITY: set a password below and uncomment it. Without it, ANYONE on your
+// Wi-Fi can push firmware to the device (remote code execution). Keep it set.
+// -----------------------------------------------------------------------------
+// #define OTA_PASSWORD  "choose-a-strong-ota-password"
 
 // -----------------------------------------------------------------------------
 // Notion
