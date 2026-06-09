@@ -20,6 +20,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <Wire.h>
@@ -96,7 +97,9 @@ const unsigned long DEBOUNCE_MS = 250;
 // -----------------------------------------------------------------------------
 time_t now();
 float  readGrams();
-void   setupWifi();
+void   setupWifi(bool forcePortal);
+void   runWifiPortal(bool onDemand);
+String wifiStatusStr(wl_status_t s);
 void   ensureWifi();
 bool   syncTime();
 bool   timeIsValid();
@@ -163,7 +166,11 @@ void setup() {
     }
 
     // ---- Wi-Fi ----
-    setupWifi();
+    // Hold the FEED button (D25) at boot to force the setup portal even if a
+    // network is already saved (use this to switch networks at a new place).
+    bool forcePortal = (digitalRead(BUTTON_PIN) == LOW);
+    if (forcePortal) Serial.println(F("FEED held at boot -> forcing WiFi portal"));
+    setupWifi(forcePortal);
     secured.setInsecure();   // v1: skip cert validation (harden with setCACert for production)
 
     // ---- Time ----
@@ -181,6 +188,13 @@ void loop() {
     if (millis() - lastWifiCheck > 30000) {
         lastWifiCheck = millis();
         ensureWifi();
+        // Re-kick NTP if Wi-Fi is up but time never synced (e.g. Wi-Fi came up
+        // after boot). configTime() is non-blocking; SNTP fills time in the
+        // background. Without this, timeIsValid() stays false and feeds are
+        // blocked until a reboot.
+        if (WiFi.status() == WL_CONNECTED && !timeIsValid()) {
+            configTime(GMT_OFFSET_SEC, DST_OFFSET_SEC, NTP_SERVER);
+        }
     }
 
     // Buttons
@@ -448,24 +462,100 @@ String clockTime(time_t t) {
 }
 
 // =============================================================================
-// Wi-Fi
+// Wi-Fi  (managed by WiFiManager — no re-flash needed to change networks)
+//
+// Behaviour:
+//   - Remembers the last network it connected to (WiFiManager stores creds in
+//     its own NVS), so at a known place it just reconnects.
+//   - If it can't connect, it opens a setup hotspot "BottleFeedLogger-Setup".
+//     Join it from a phone/laptop; a page lets you pick a network + password.
+//   - Force the portal on demand by holding the FEED button (D25) at boot.
+//   - WiFiManager owns the saved credentials (in its own NVS namespace); config.h
+//     WIFI_SSID/WIFI_PASSWORD are no longer used.
 // =============================================================================
-void setupWifi() {
+const char *AP_NAME = "BottleFeedLogger-Setup";
+
+// Human-readable reason for a Wi-Fi connect failure (don't assume it's auth).
+String wifiStatusStr(wl_status_t s) {
+    switch (s) {
+        case WL_NO_SSID_AVAIL: return "network not found";
+        case WL_CONNECT_FAILED: return "connect failed";   // generic: bad pw, handshake, AP unreachable, ...
+        case WL_CONNECTION_LOST: return "connection lost";
+        case WL_DISCONNECTED: return "no connection";
+        case WL_IDLE_STATUS: return "idle/timeout";
+        default: return String("status ") + (int)s;
+    }
+}
+
+// Bring the portal up and block until the user configures Wi-Fi (or times out).
+void runWifiPortal(bool onDemand) {
+    WiFiManager wm;
+    // On-demand (button-forced) portal: stay up until configured, no timeout, so
+    // the hotspot doesn't vanish mid-setup. Auto (boot) portal: give up after 5
+    // min and continue booting unconfigured (the device keeps running offline;
+    // hold FEED at the next reset to open the portal again).
+    wm.setConfigPortalTimeout(onDemand ? 0 : 300);
+    // Fail over to the setup hotspot quickly when a saved network isn't around
+    // (this device moves between locations). ~1 try x ~12s instead of ~40s.
+    wm.setConnectTimeout(12);
+    wm.setConnectRetries(1);
+    // Only break-after-config on the AUTO (boot) portal, so a failed attempt
+    // returns control and the device keeps running. For the ON-DEMAND portal we
+    // leave it off so a typoed password keeps the portal up to retry instead of
+    // closing it (which would force a reboot + FEED-hold to try again).
+    wm.setBreakAfterConfig(!onDemand);
+
+    // Show "Connecting..." the instant the form is submitted, BEFORE the blocking
+    // connect (~up to 13s), so the OLED doesn't sit on the setup screen. Use the
+    // public getWiFiSSID(false) — the non-persistent (in-RAM) value, which holds
+    // the just-submitted network. (getWiFiSSID(true) returns the OLD saved value,
+    // which is why the display previously showed a stale name.) Fired by
+    // setPreSaveConfigCallback, which runs in the WiFi-save handler before connect.
+    wm.setPreSaveConfigCallback([&wm]() {
+        String ssid = wm.getWiFiSSID(false);   // newly-entered SSID (in-RAM, not saved)
+        Serial.printf("Portal submit -> connecting to \"%s\"...\n", ssid.c_str());
+        drawMessage("Connecting to", ssid.length() ? ssid : String("..."));
+    });
+
+    drawMessage("WiFi setup", String("Join: ") + AP_NAME);
+    Serial.printf("Opening config portal AP \"%s\"...\n", AP_NAME);
+
+    bool ok = onDemand ? wm.startConfigPortal(AP_NAME)   // forced: always show portal
+                       : wm.autoConnect(AP_NAME);        // auto: portal only if needed
+
+    // WiFi.SSID() reflects the network actually used (unlike the saved getter).
+    String usedSsid = WiFi.SSID();
+
+    if (ok) {
+        Serial.printf("WiFi OK %s on \"%s\"\n",
+                      WiFi.localIP().toString().c_str(), usedSsid.c_str());
+        // Line 1: which network; line 2: the IP it got.
+        drawMessage(usedSsid.length() ? usedSsid : String("WiFi connected"),
+                    WiFi.localIP().toString());
+    } else {
+        // Failure can be wrong password, network not found, portal timeout,
+        // etc. — report the actual WiFi status rather than assuming a cause.
+        String why = wifiStatusStr(WiFi.status());
+        Serial.printf("WiFi FAILED: SSID=\"%s\" status=%s\n", usedSsid.c_str(), why.c_str());
+        // Line 1: which network failed (if known); line 2: the reason.
+        drawMessage(usedSsid.length() ? ("WiFi: " + usedSsid) : String("WiFi failed"), why);
+    }
+    delay(3000);
+}
+
+void setupWifi(bool forcePortal) {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    drawMessage("WiFi", "connecting...");
-    unsigned long t0 = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - t0 < 20000) { delay(400); Serial.print("."); }
-    if (WiFi.status() == WL_CONNECTED)
-        Serial.printf("\nWiFi OK %s\n", WiFi.localIP().toString().c_str());
-    else
-        Serial.println(F("\nWiFi FAILED — retrying in loop"));
+    // WiFiManager owns the credentials: autoConnect() reconnects to the last
+    // saved network and only opens the portal if that fails. We deliberately do
+    // NOT WiFi.begin() with config.h creds here — doing so overwrote the saved
+    // network on every boot, so a portal-configured network was never remembered.
+    runWifiPortal(forcePortal);
 }
 
 void ensureWifi() {
     if (WiFi.status() == WL_CONNECTED) return;
-    WiFi.disconnect();
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    // Let WiFiManager's stored credentials reconnect; don't block the loop.
+    WiFi.reconnect();
 }
 
 // =============================================================================
