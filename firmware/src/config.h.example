@@ -30,10 +30,12 @@
 // Once flashed, future updates can be pushed over Wi-Fi (no USB cable) using the
 // dedicated OTA env defined in platformio.ini:
 //   pio run -e ota -t upload
-// (If OTA_PASSWORD is set below, add: --upload-flags --auth=<password>)
 //
-// SECURITY: set a password below and uncomment it. Without it, ANYONE on your
-// Wi-Fi can push firmware to the device (remote code execution). Keep it set.
+// SECURITY: OTA is DISABLED unless you set OTA_PASSWORD below. This is the safe
+// default — unauthenticated OTA would let anyone on your Wi-Fi push firmware to
+// the device (remote code execution). To enable OTA: uncomment OTA_PASSWORD
+// here, and uncomment the matching `upload_flags = --auth=...` in the [env:ota]
+// block of platformio.ini (the two must match).
 // -----------------------------------------------------------------------------
 // #define OTA_PASSWORD  "choose-a-strong-ota-password"
 

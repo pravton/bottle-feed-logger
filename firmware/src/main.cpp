@@ -569,27 +569,35 @@ void ensureWifi() {
 
 // Enable Over-The-Air updates: once this firmware is running, future builds can
 // be pushed over Wi-Fi (PlatformIO: upload_protocol = espota) with no cable.
-// The device appears as "bottle-feed-logger" on the network. Safe to call
-// repeatedly: it only starts once, and only after Wi-Fi is up (so it also works
-// when Wi-Fi connects after boot, called from the loop's health check).
+// The device appears as "bottle-feed-logger" on the network. Disabled unless
+// OTA_PASSWORD is set (see below). Safe to call repeatedly: it only starts once,
+// and only after Wi-Fi is up (so it also works when Wi-Fi connects after boot,
+// called from the loop's health check).
 void setupOTA() {
     static bool otaStarted = false;
     if (otaStarted || WiFi.status() != WL_CONNECTED) return;
 
-    ArduinoOTA.setHostname("bottle-feed-logger");
-    // Require a password if OTA_PASSWORD is set in config.h. Without it, anyone on
-    // the LAN could push firmware — strongly recommended to set one.
-#ifdef OTA_PASSWORD
-    ArduinoOTA.setPassword(OTA_PASSWORD);
+    // Secure by default: OTA is DISABLED unless OTA_PASSWORD is set in config.h.
+    // Unauthenticated OTA would let anyone on the LAN push arbitrary firmware
+    // (remote code execution), so we require a password to enable it rather than
+    // starting open with only a warning.
+#ifndef OTA_PASSWORD
+    static bool warned = false;
+    if (!warned) {
+        warned = true;
+        Serial.println(F("OTA disabled: set OTA_PASSWORD in config.h to enable Wi-Fi updates"));
+    }
+    return;
 #else
-    Serial.println(F("WARNING: OTA has no password (set OTA_PASSWORD in config.h)"));
-#endif
+    ArduinoOTA.setHostname("bottle-feed-logger");
+    ArduinoOTA.setPassword(OTA_PASSWORD);
     ArduinoOTA.onStart([]() { drawMessage("OTA update", "receiving..."); });
     ArduinoOTA.onEnd([]()   { drawMessage("OTA update", "done, reboot"); });
     ArduinoOTA.onError([](ota_error_t e) { drawMessage("OTA failed", String("err ") + e); });
     ArduinoOTA.begin();
     otaStarted = true;
     Serial.println(F("OTA ready: bottle-feed-logger"));
+#endif
 }
 
 // =============================================================================
