@@ -2,7 +2,10 @@
 // Bottle Feed Logger — Configuration
 //
 // 1. Copy this file to `config.h` in the same directory.
-// 2. Fill in your Wi-Fi and Notion details below.
+// 2. Fill in your Notion details below (and optionally Telegram + an OTA
+//    password). Wi-Fi is NOT set here anymore — it's configured on-device via
+//    the setup portal (see the Wi-Fi section below); the WIFI_* defines are
+//    legacy and unused.
 // 3. `config.h` is gitignored so your secrets won't be committed.
 // =============================================================================
 
@@ -10,9 +13,31 @@
 
 // -----------------------------------------------------------------------------
 // Wi-Fi (2.4 GHz only)
+//
+// LEGACY / UNUSED: Wi-Fi is now configured on-device via the setup portal
+// (WiFiManager), not from here. On first boot — or any time you hold the FEED
+// button (D25) at reset — the device broadcasts a "BottleFeedLogger-Setup"
+// hotspot; join it from a phone and pick your network. Credentials are saved on
+// the device. These two defines are kept only for backward compatibility and are
+// no longer read by the firmware; you can ignore them.
 // -----------------------------------------------------------------------------
 #define WIFI_SSID      "YourWiFiName"
 #define WIFI_PASSWORD  "YourWiFiPassword"
+
+// -----------------------------------------------------------------------------
+// OTA (over-the-air firmware updates over Wi-Fi)
+//
+// Once flashed, future updates can be pushed over Wi-Fi (no USB cable) using the
+// dedicated OTA env defined in platformio.ini:
+//   pio run -e ota -t upload
+//
+// SECURITY: OTA is DISABLED unless you set OTA_PASSWORD below. This is the safe
+// default — unauthenticated OTA would let anyone on your Wi-Fi push firmware to
+// the device (remote code execution). To enable OTA: uncomment OTA_PASSWORD
+// here, and uncomment the matching `upload_flags = --auth=...` in the [env:ota]
+// block of platformio.ini (the two must match).
+// -----------------------------------------------------------------------------
+// #define OTA_PASSWORD  "choose-a-strong-ota-password"
 
 // -----------------------------------------------------------------------------
 // Notion
