@@ -169,7 +169,7 @@ void   sampleScale();
 long   medianRawBlocking(int n, unsigned long timeoutMs);
 float  rawToGrams(long raw);
 float  captureGrams();
-void   tareRobust();
+bool   tareRobust();
 bool   applyCalibration(float knownG);
 void   clearCalibration();
 bool   waitStable(unsigned long timeoutMs);
@@ -247,8 +247,21 @@ void setup() {
     Serial.printf("Calibration factor: %.3f, known weight: %.0f g, tare offset: %ld\n",
                   calibrationFactor, calKnownWeight, savedOffset);
     scale.set_scale(calibrationFactor);
-    if (savedOffset != 0) scale.set_offset(savedOffset);
-    else                  tareRobust();   // median tare (a stray spike can't poison the zero)
+    // Re-zero on EVERY boot rather than restoring the saved offset. A load cell's
+    // zero-load raw reading drifts between power cycles (temperature, mechanical
+    // settling after travel), so a saved raw zero is stale next boot and shows a
+    // phantom 400-500 g on an empty platform -- the bug behind "after a reboot in
+    // a new place it's way off and only recalibration fixes it" (recalibration's
+    // first step is itself a fresh tare). The span (calibrationFactor) IS stable
+    // across boots, so we keep persisting that; the zero we take fresh.
+    // Note: logged volume = startWeight - endWeight, so the offset cancels and
+    // past feeds were never affected -- only the live display and the on-device
+    // calibration weight-detection. Fall back to the last saved zero only if the
+    // HX711 can't be read yet at boot, so the display isn't garbage until a tare.
+    if (!tareRobust() && savedOffset != 0) {
+        scale.set_offset(savedOffset);
+        Serial.printf("Boot tare failed (HX711 not ready); using last saved offset %ld\n", savedOffset);
+    }
 
     // ---- Restore last feed from flash so the display survives a reboot ----
     lastFeedEnd  = (time_t)prefs.getLong("lastEnd", 0);
@@ -453,14 +466,15 @@ bool waitStableLoaded(unsigned long timeoutMs, long minDeltaCounts) {
 
 // Median-based tare: averages out glitches so a stray spike can't poison the
 // zero offset (the old library tare() used a plain mean of 10).
-void tareRobust() {
+bool tareRobust() {
     long med = medianRawBlocking(20, 2000);
-    if (med == LONG_MIN) { Serial.println(F("Tare FAILED: no scale read")); return; }
+    if (med == LONG_MIN) { Serial.println(F("Tare FAILED: no scale read")); return false; }
     scale.set_offset(med);
-    prefs.putLong("tareOffset", med);
+    prefs.putLong("tareOffset", med);   // kept only as a boot fallback (see setup())
     // reset the display filter so it re-converges around the new zero
     resetScaleFilter();
     Serial.printf("Tared. offset=%ld\n", med);
+    return true;
 }
 
 // Compute and persist a calibration factor from a known reference weight.
