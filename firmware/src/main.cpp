@@ -489,6 +489,20 @@ bool applyCalibration(float knownG) {
     if (med == LONG_MIN) { Serial.println(F("Cal FAILED: no scale read")); return false; }
 
     long value = med - scale.get_offset();        // counts vs empty (signed)
+    // Reject a too-small deflection BEFORE deriving a factor from it. If the
+    // placed weight barely moved the reading, either no weight is on or the cell
+    // is dead / unmounted (can't flex). Saving a factor from that gives a tiny
+    // counts-per-gram (we have seen 2.1) that amplifies normal sensor noise into
+    // tens of grams and makes taring useless -- you zero it and it drifts right
+    // back. The on-device flow already gates on this via
+    // waitStableLoaded(CAL_MIN_LOAD_COUNTS); enforce the same floor HERE so the
+    // web /cal/capture path (which only waits for stability, not load) can't
+    // bypass it and persist garbage.
+    if (labs(value) < CAL_MIN_LOAD_COUNTS) {
+        Serial.printf("Cal FAILED: only %ld counts of deflection (< %d) - is the weight really on? is the cell mounted so it can flex?\n",
+                      value, CAL_MIN_LOAD_COUNTS);
+        return false;
+    }
     float factor = (float)value / knownG;         // counts per gram (signed = direction)
     if (fabsf(factor) < 1.0f || fabsf(factor) > 100000.0f) {
         Serial.printf("Cal FAILED: factor %.2f implausible (delta=%ld counts) - weight on the scale?\n",
