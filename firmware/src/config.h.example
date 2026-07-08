@@ -96,7 +96,7 @@
 #define PROP_NOTES     "Notes"
 
 // -----------------------------------------------------------------------------
-// Time zone (Barrie, Ontario = Eastern Time)
+// Time zone: set the GMT/DST offsets for your region (default below = Eastern Time)
 //   Standard time is UTC-5; daylight saving adds 1 hour.
 // -----------------------------------------------------------------------------
 #define GMT_OFFSET_SEC  (-5 * 3600)
