@@ -18,7 +18,7 @@ ESP32 firmware for the Bottle Feed Logger.
 | `bblanchon/ArduinoJson` | ^7.0.4 | Build the Notion JSON body |
 | `witnessmenow/UniversalTelegramBot` | ^1.3.0 | Optional Telegram confirmation |
 
-`WiFi`, `WiFiClientSecure`, `HTTPClient`, `Preferences`, and `time.h` are part of the ESP32 Arduino core — no install needed.
+`WiFi`, `WiFiClientSecure`, `HTTPClient`, `Preferences`, and `time.h` are part of the ESP32 Arduino core (no install needed).
 
 ## Setup
 
@@ -50,16 +50,32 @@ NTP time synced
 [Feed Logger] Ready.
 ```
 
+## Controls (no reset button / case removal needed)
+
+| Gesture | Action |
+|---------|--------|
+| **Tap FEED** (GPIO 25) | Start / stop a feed |
+| **Tap TARE** (GPIO 26) | Zero the scale |
+| **Hold FEED + TARE 3s** | Guided calibration (countdown on screen) |
+| **Hold TARE alone 4s** | Restart the device |
+| **Hold FEED at power-on** | Force the Wi-Fi setup portal |
+
+You can also drive everything from a phone: the device serves a control page at
+**`http://bottle-feed-logger.local`** (or its IP) with live weight and Tare /
+Calibrate / Restart buttons. Optionally gate the actions with `WEB_CONTROL_KEY`
+(see `config.h.example`).
+
 ## How calibration works
 
-The firmware enters **calibration mode** when the **tare button (GPIO 26) is held during boot/reset**:
+Start it with **hold FEED + TARE for 3 s** (or the Calibrate button on the web
+page). The guided flow:
 
-1. "Remove all weight" — it tares the empty platform and saves the offset
-2. "Place weight: 250 g" — put your known weight on (default 250 g; change `CALIBRATION_KNOWN_WEIGHT_G`)
-3. It reads, computes counts-per-gram, and **saves the factor to flash** (NVS)
-4. Done — the value persists across reboots; you won't need to recalibrate unless you change the mechanical setup
+1. **Remove all weight**: it waits for the empty reading to settle, then tares and saves the offset
+2. **Pick the known weight on-device**: FEED = +10 g, TARE = -10 g (hold a button to auto-repeat), then **stop pressing for 3 s to confirm** (no two-button press). Your choice is remembered in flash, so no reflash to change reference weights. The starting value is `CALIBRATION_KNOWN_WEIGHT_G`
+3. **Place the weight**: it auto-detects when the load settles (in either deflection direction), reads the median, computes counts-per-gram, and **saves the signed factor to flash** (NVS)
+4. Done. The value persists across reboots
 
-If you never calibrate, it uses `DEFAULT_CALIBRATION_FACTOR`, which will be inaccurate — always calibrate once.
+The saved factor is **signed**, so it works whether your load cell reads up or down under load. A calibration that comes out impossible (magnitude wildly out of range, or no real weight change detected) is **rejected** and the old value is kept, so a glitchy read can't corrupt your scale. To wipe calibration back to defaults, use **Clear calibration** on the web page. If you never calibrate, it uses `DEFAULT_CALIBRATION_FACTOR`, which will be inaccurate; always calibrate once.
 
 ## How a feed is captured
 
@@ -69,6 +85,15 @@ If you never calibrate, it uses `DEFAULT_CALIBRATION_FACTOR`, which will be inac
   - `duration = endTime − startTime`
 - It rejects values outside `MIN_FEED_ML`..`MAX_FEED_ML` (accidental presses)
 - Otherwise it POSTs a row to Notion and shows the result on the OLED
+
+## Why the weight reading is stable
+
+Each weight is the **median** of the last several raw HX711 samples, not an
+average. The HX711 occasionally returns a wildly wrong sample (missed clock
+cycle, EMI, a momentarily loose load-cell wire); an average gets dragged
+hundreds of grams by one such spike, while a median ignores isolated outliers
+entirely. Tare, calibration, and feed-capture also wait for the reading to be
+**stable** (spread within `SCALE_STABLE_SPREAD_G`) before acting.
 
 ## Configuration variables
 
@@ -82,13 +107,14 @@ All in `src/config.h`. Highlights:
 | `PROP_*` | Must match your Notion column names exactly |
 | `GMT_OFFSET_SEC` / `DST_OFFSET_SEC` | Time zone (Eastern preset) |
 | `ENABLE_TELEGRAM` | 0/1 toggle for the optional buzz |
-| `CALIBRATION_KNOWN_WEIGHT_G` | Weight you place during calibration |
+| `CALIBRATION_KNOWN_WEIGHT_G` | Starting reference weight for calibration (adjustable on-device) |
 | `MIN_FEED_ML` / `MAX_FEED_ML` | Sanity bounds |
-| `SAMPLES_PER_READING` | Smoothing (averaging) window |
+| `SCALE_MEDIAN_SAMPLES` / `SCALE_STABLE_SPREAD_G` | Median-filter window / stability threshold (optional overrides) |
+| `WEB_CONTROL_KEY` | Optional shared key; when set, gates the entire web interface (page, status, and actions), not just the actions |
 
 ## TLS note
 
-v1 uses `secured.setInsecure()` — it skips certificate validation for the HTTPS calls. That's a reasonable trade-off for a hobby device on your home network. To harden it, load Notion's root CA and use `secured.setCACert(...)` instead.
+v1 uses `secured.setInsecure()`: it skips certificate validation for the HTTPS calls. That's a reasonable trade-off for a hobby device on your home network. To harden it, load Notion's root CA and use `secured.setCACert(...)` instead.
 
 ## Notion JSON shape (for reference)
 
@@ -126,6 +152,5 @@ firmware/
 
 - Auto lift/return feed detection (no buttons)
 - Offline queue in SPIFFS for failed Notion writes
-- Local web dashboard
 - Feed-type tag (formula/breastmilk)
 - Module split into separate files
