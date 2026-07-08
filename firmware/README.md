@@ -18,7 +18,7 @@ ESP32 firmware for the Bottle Feed Logger.
 | `bblanchon/ArduinoJson` | ^7.0.4 | Build the Notion JSON body |
 | `witnessmenow/UniversalTelegramBot` | ^1.3.0 | Optional Telegram confirmation |
 
-`WiFi`, `WiFiClientSecure`, `HTTPClient`, `Preferences`, and `time.h` are part of the ESP32 Arduino core — no install needed.
+`WiFi`, `WiFiClientSecure`, `HTTPClient`, `Preferences`, and `time.h` are part of the ESP32 Arduino core (no install needed).
 
 ## Setup
 
@@ -70,12 +70,12 @@ Calibrate / Restart buttons. Optionally gate the actions with `WEB_CONTROL_KEY`
 Start it with **hold FEED + TARE for 3 s** (or the Calibrate button on the web
 page). The guided flow:
 
-1. **Remove all weight** — it waits for the empty reading to settle, then tares and saves the offset
-2. **Pick the known weight on-device** — FEED = +10 g, TARE = -10 g (hold a button to auto-repeat), then **stop pressing for 3 s to confirm** (no two-button press). Your choice is remembered in flash, so no reflash to change reference weights. The starting value is `CALIBRATION_KNOWN_WEIGHT_G`
-3. **Place the weight** — it auto-detects when the load settles (in either deflection direction), reads the median, computes counts-per-gram, and **saves the signed factor to flash** (NVS)
-4. Done — the value persists across reboots
+1. **Remove all weight**: it waits for the empty reading to settle, then tares and saves the offset
+2. **Pick the known weight on-device**: FEED = +10 g, TARE = -10 g (hold a button to auto-repeat), then **stop pressing for 3 s to confirm** (no two-button press). Your choice is remembered in flash, so no reflash to change reference weights. The starting value is `CALIBRATION_KNOWN_WEIGHT_G`
+3. **Place the weight**: it auto-detects when the load settles (in either deflection direction), reads the median, computes counts-per-gram, and **saves the signed factor to flash** (NVS)
+4. Done. The value persists across reboots
 
-The saved factor is **signed**, so it works whether your load cell reads up or down under load. A calibration that comes out impossible (magnitude wildly out of range, or no real weight change detected) is **rejected** and the old value is kept, so a glitchy read can't corrupt your scale. To wipe calibration back to defaults, use **Clear calibration** on the web page. If you never calibrate, it uses `DEFAULT_CALIBRATION_FACTOR`, which will be inaccurate — always calibrate once.
+The saved factor is **signed**, so it works whether your load cell reads up or down under load. A calibration that comes out impossible (magnitude wildly out of range, or no real weight change detected) is **rejected** and the old value is kept, so a glitchy read can't corrupt your scale. To wipe calibration back to defaults, use **Clear calibration** on the web page. If you never calibrate, it uses `DEFAULT_CALIBRATION_FACTOR`, which will be inaccurate; always calibrate once.
 
 ## How a feed is captured
 
@@ -110,11 +110,11 @@ All in `src/config.h`. Highlights:
 | `CALIBRATION_KNOWN_WEIGHT_G` | Starting reference weight for calibration (adjustable on-device) |
 | `MIN_FEED_ML` / `MAX_FEED_ML` | Sanity bounds |
 | `SCALE_MEDIAN_SAMPLES` / `SCALE_STABLE_SPREAD_G` | Median-filter window / stability threshold (optional overrides) |
-| `WEB_CONTROL_KEY` | Optional shared key gating the web control actions |
+| `WEB_CONTROL_KEY` | Optional shared key; when set, gates the entire web interface (page, status, and actions), not just the actions |
 
 ## TLS note
 
-v1 uses `secured.setInsecure()` — it skips certificate validation for the HTTPS calls. That's a reasonable trade-off for a hobby device on your home network. To harden it, load Notion's root CA and use `secured.setCACert(...)` instead. See `docs/design-decisions.md` § Decision 10.
+v1 uses `secured.setInsecure()`: it skips certificate validation for the HTTPS calls. That's a reasonable trade-off for a hobby device on your home network. To harden it, load Notion's root CA and use `secured.setCACert(...)` instead.
 
 ## Notion JSON shape (for reference)
 

@@ -1,5 +1,5 @@
 // =============================================================================
-// Bottle Feed Logger — ESP32 firmware
+// Bottle Feed Logger: ESP32 firmware
 //
 // Hardware: ESP32 DevKit V1 + 1kg load cell + HX711 + button(s) + SSD1306 OLED
 // Logs each feed (start, end, duration, volume) to a Notion database.
@@ -13,7 +13,7 @@
 //   OLED SCL  -> GPIO 22
 //
 // Volume trick: consumed = startWeight - endWeight. The bottle is in both
-// readings, so its weight cancels — no per-bottle tare needed.
+// readings, so its weight cancels; no per-bottle tare needed.
 //
 // NOT a medical device. See docs/safety-notes.md.
 // =============================================================================
@@ -46,7 +46,7 @@
 // -----------------------------------------------------------------------------
 // How many recent raw HX711 samples to median-filter for the live display. A
 // median ignores isolated spikes entirely (one bad read can't move it), which
-// is the whole point — the HX711 glitches on long/loose load-cell wiring and a
+// is the whole point: the HX711 glitches on long/loose load-cell wiring and a
 // single spike used to throw the number by hundreds of grams.
 #ifndef SCALE_MEDIAN_SAMPLES
   #define SCALE_MEDIAN_SAMPLES 7
@@ -223,7 +223,7 @@ void setup() {
     unsigned long t0 = millis();
     while (!scale.is_ready() && millis() - t0 < 3000) delay(50);
     if (scale.is_ready()) Serial.println(F("HX711 ready"));
-    else                  Serial.println(F("HX711 NOT responding — check wiring"));
+    else                  Serial.println(F("HX711 NOT responding: check wiring"));
 
     // ---- Load saved calibration ----
     prefs.begin("feedlogger", false);
@@ -238,6 +238,12 @@ void setup() {
     if (isnan(calibrationFactor) ||
         fabsf(calibrationFactor) < 1.0f || fabsf(calibrationFactor) > 100000.0f)
         calibrationFactor = DEFAULT_CALIBRATION_FACTOR;
+    // Same idea for the reference weight: a NaN/out-of-range value here would
+    // show up as a broken "Set weight: nan g" screen and an invalid-JSON
+    // /status response (knownG:nan), so clamp it to the same range the
+    // on-device stepper (constrain(10, 2000)) already enforces.
+    if (isnan(calKnownWeight) || calKnownWeight < 10.0f || calKnownWeight > 2000.0f)
+        calKnownWeight = CALIBRATION_KNOWN_WEIGHT_G;
     Serial.printf("Calibration factor: %.3f, known weight: %.0f g, tare offset: %ld\n",
                   calibrationFactor, calKnownWeight, savedOffset);
     scale.set_scale(calibrationFactor);
@@ -273,7 +279,7 @@ void setup() {
 
     // ---- Time ----
     if (syncTime()) Serial.println(F("NTP time synced"));
-    else            Serial.println(F("NTP sync failed — will retry"));
+    else            Serial.println(F("NTP sync failed, will retry"));
 
     Serial.println(F("[Feed Logger] Ready."));
 }
@@ -336,8 +342,8 @@ time_t now() { time_t t; time(&t); return t; }
 //
 // Why median, not average: the HX711 occasionally returns a wildly wrong
 // sample (missed clock cycle, EMI, a momentarily loose load-cell wire). A mean
-// — which is what the library's get_units()/read_average() and the old EMA both
-// used — gets dragged hundreds of grams by ONE such spike. A median of the last
+// (which is what the library's get_units()/read_average() and the old EMA both
+// used) gets dragged hundreds of grams by ONE such spike. A median of the last
 // few reads simply discards any isolated outlier, so the number stays put.
 // =============================================================================
 
@@ -351,7 +357,7 @@ bool readRawValid(long &out) {
     return true;
 }
 
-// Median of an array (sorts in place — caller passes a scratch copy).
+// Median of an array (sorts in place; caller passes a scratch copy).
 static int cmpLong(const void *a, const void *b) {
     long x = *(const long *)a, y = *(const long *)b;
     return (x > y) - (x < y);
@@ -501,7 +507,7 @@ void clearCalibration() {
 }
 
 // =============================================================================
-// Buttons — unified state machine (taps vs hold-gestures)
+// Buttons: unified state machine (taps vs hold-gestures)
 //
 //   Tap FEED            -> start / stop a feed
 //   Tap TARE            -> zero the scale
@@ -607,7 +613,12 @@ void handleButtons() {
         if (!restartFired) {
             if (held >= RESTART_HOLD_MS) {
                 restartFired = true; tareConsumed = true; gestureHintActive = false;
-                doRestart();
+                if (state == FEEDING) {            // don't restart under an open feed
+                    drawMessage("Finish feed", "before restarting");
+                    delay(1500); forceRedraw();
+                } else {
+                    doRestart();
+                }
             } else if (held > 1000) {
                 gestureHintActive = true;
                 int rem = (int)((RESTART_HOLD_MS - held) / 1000) + 1;
@@ -671,7 +682,7 @@ void doCalibration() {
 
     // ---- Step 2: choose the known reference weight ----
     // FEED = +10 g, TARE = -10 g (hold a button to auto-repeat). CONFIRM simply
-    // by NOT touching either button for 3 s — no awkward two-button press.
+    // by NOT touching either button for 3 s; no awkward two-button press.
     float knownG = calKnownWeight;
     bool  prevF = false, prevT = false, confirmed = false;
     unsigned long holdStart = 0, lastStep = 0, lastChange = millis(), overall = millis();
@@ -807,7 +818,7 @@ bool postToNotion(float volumeMl, int durationMin, time_t s, time_t e) {
     props[PROP_DURATION]["number"] = durationMin;
     props[PROP_VOLUME]["number"]   = (int)round(volumeMl);
 
-    // Notes (rich_text) — a clear, human-readable summary of the feed.
+    // Notes (rich_text): a clear, human-readable summary of the feed.
     String summary = "🍼 Fed " + String((int)round(volumeMl)) + " mL  •  "
                    + "⏱ " + String(durationMin) + " min  •  "
                    + "🟢 Started " + clockTime(s) + "  •  "
@@ -878,7 +889,7 @@ String clockTime(time_t t) {
 }
 
 // =============================================================================
-// Wi-Fi  (managed by WiFiManager — no re-flash needed to change networks)
+// Wi-Fi  (managed by WiFiManager; no re-flash needed to change networks)
 //
 // Behaviour:
 //   - Remembers the last network it connected to (WiFiManager stores creds in
@@ -993,7 +1004,7 @@ void drawConnected(const String &ssid, const String &ip) {
     delay(1300);
 }
 
-// "Wi-Fi setup needed" — shown only when we can't reconnect; tells you which
+// "Wi-Fi setup needed": shown only when we can't reconnect; tells you which
 // hotspot to join to configure the network.
 void drawPortalInfo(const String &ap) {
     display.clearDisplay();
@@ -1078,7 +1089,7 @@ void runWifiPortal(bool onDemand) {
 
     // Show "Connecting..." the instant the form is submitted, BEFORE the blocking
     // connect (~up to 13s), so the OLED doesn't sit on the setup screen. Use the
-    // public getWiFiSSID(false) — the non-persistent (in-RAM) value, which holds
+    // public getWiFiSSID(false): the non-persistent (in-RAM) value, which holds
     // the just-submitted network. (getWiFiSSID(true) returns the OLD saved value,
     // which is why the display previously showed a stale name.) Fired by
     // setPreSaveConfigCallback, which runs in the WiFi-save handler before connect.
@@ -1105,7 +1116,7 @@ void runWifiPortal(bool onDemand) {
         return;   // drawConnected already held the screen
     } else {
         // Failure can be wrong password, network not found, portal timeout,
-        // etc. — report the actual WiFi status rather than assuming a cause.
+        // etc.; report the actual WiFi status rather than assuming a cause.
         String why = wifiStatusStr(WiFi.status());
         Serial.printf("WiFi FAILED: SSID=\"%s\" status=%s\n", usedSsid.c_str(), why.c_str());
         // Line 1: which network failed (if known); line 2: the reason.
@@ -1175,10 +1186,11 @@ void setupOTA() {
 // =============================================================================
 // Web control page  (tare / calibrate / restart / live weight from a phone)
 //
-// Served at http://bottle-feed-logger.local (or the device IP). The mutating
-// actions (tare/calibrate/restart) can be protected with an optional shared
-// key: define WEB_CONTROL_KEY in config.h and they'll require ?key=... . If you
-// leave it undefined, the actions are open to anyone on your Wi-Fi (fine for a
+// Served at http://bottle-feed-logger.local (or the device IP). The entire
+// interface (the page, /status, and the mutating tare/calibrate/restart
+// actions) can be protected with an optional shared key: define
+// WEB_CONTROL_KEY in config.h and every route will require ?key=... . If you
+// leave it undefined, everything is open to anyone on your Wi-Fi (fine for a
 // trusted home network; the device is LAN-only and not exposed to the Internet).
 // =============================================================================
 static bool webAuthed() {
@@ -1228,7 +1240,7 @@ static void handleStatus() {
 
 // The control page is split into two PROGMEM halves with the (optional) auth
 // key injected between them, then streamed straight from flash with a known
-// content length — so rendering a ~14 KB page costs almost no RAM.
+// content length, so rendering a ~14 KB page costs almost no RAM.
 static const char PAGE_A[] PROGMEM = R"HZ(<!doctype html><html lang=en><head>
 <meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name=theme-color content="#14110f"><meta name=referrer content=no-referrer><title>Feed Logger</title>
@@ -1369,7 +1381,7 @@ async function poll(){
   $('#cf').textContent=d.calFactor;
   $('#kg').textContent=d.knownG+' g';
   $('#last').textContent=d.haveLast?(d.lastVol+' mL · '+d.lastDur+' min'):'no feeds yet';
-  $('#cwt').textContent=(g==null?'—':Math.round(g))+' g';
+  $('#cwt').textContent=(g==null?'-':Math.round(g))+' g';
   if(d.knownG&&!kgTouched)$('#kw').value=d.knownG;
  }catch(e){$('#dot').className='dot off';$('#stl').textContent='offline'}
 }
@@ -1383,7 +1395,7 @@ function closeCal(){$('#cal').classList.remove('show')}
 function cmsg(t,k){var e=$('#cmsg');e.textContent=t;e.className='cmsg'+(k==1?' ok':k==-1?' err':'')}
 function bump(d){var i=$('#kw');i.value=Math.max(10,(parseInt(i.value)||0)+d);kgTouched=true}
 $('#kw').addEventListener('input',function(){kgTouched=true});
-async function zero(){var b=$('#zbtn');b.disabled=true;b.textContent='Zeroing…';try{await fetch(q('/cal/zero'));$('#s1').classList.add('done');cmsg('Zeroed — now place the weight',1)}catch(e){cmsg('zero failed',-1)}b.textContent='Zero (empty)';b.disabled=false}
+async function zero(){var b=$('#zbtn');b.disabled=true;b.textContent='Zeroing…';try{await fetch(q('/cal/zero'));$('#s1').classList.add('done');cmsg('Zeroed, now place the weight',1)}catch(e){cmsg('zero failed',-1)}b.textContent='Zero (empty)';b.disabled=false}
 async function capture(){var g=parseInt($('#kw').value)||0;if(g<10){cmsg('Set the weight first',-1);return}cmsg('Measuring…',0);try{var t=await (await fetch(q('/cal/capture?g='+g))).text();var ok=t.indexOf('OK')==0;cmsg(t,ok?1:-1);if(ok)$('#s3').classList.add('done')}catch(e){cmsg('capture failed',-1)}}
 async function clearCal(){if(!confirm('Clear calibration back to defaults?'))return;try{var t=await (await fetch(q('/cal/reset'))).text();cmsg(t,1);$('#s1').classList.remove('done');$('#s3').classList.remove('done')}catch(e){cmsg('reset failed',-1)}}
 </script></body></html>)HZ";
@@ -1436,6 +1448,7 @@ void setupWeb() {
 
     server.on("/restart", HTTP_GET, []() {
         if (!webAuthed()) { server.send(403, "text/plain", "forbidden"); return; }
+        if (webRejectIfFeeding()) return;
         server.send(200, "text/plain", "restarting...");
         pendingRestartMs = millis() + 600;   // restart after the response flushes
         if (pendingRestartMs == 0) pendingRestartMs = 1;   // 0 is the "no restart" sentinel
@@ -1455,10 +1468,14 @@ void setupWeb() {
         if (!webAuthed()) { server.send(403, "text/plain", "forbidden"); return; }
         if (webRejectIfFeeding()) return;
         float g = server.hasArg("g") ? server.arg("g").toFloat() : 0.0f;
-        if (g < 1.0f) { server.send(400, "text/plain", "missing/invalid g"); return; }
+        if (g < 10.0f || g > 2000.0f) { server.send(400, "text/plain", "g must be 10-2000"); return; }
         drawMessage("Web calibrate", "measuring...");
-        waitStable(3000);          // best-effort: let the just-placed weight settle first
-        bool ok = applyCalibration(g);
+        // Require a real, steady load like the on-device flow (waitStableLoaded +
+        // CAL_MIN_LOAD_COUNTS) -- a plain settle check would accept an empty,
+        // already-quiescent platform and let ambient noise divided by g pass as
+        // a "valid" factor.
+        bool loaded = waitStableLoaded(5000, CAL_MIN_LOAD_COUNTS);
+        bool ok = loaded && applyCalibration(g);
         forceRedraw();
         if (ok) server.send(200, "text/plain", "OK - calibrated, factor " + String(calibrationFactor, 1));
         else    server.send(500, "text/plain", "FAILED - no clear weight change (is the weight on? did you Zero first?)");

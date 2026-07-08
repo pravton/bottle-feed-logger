@@ -1,9 +1,9 @@
 // =============================================================================
-// Bottle Feed Logger — Configuration
+// Bottle Feed Logger: Configuration
 //
 // 1. Copy this file to `config.h` in the same directory.
 // 2. Fill in your Notion details below (and optionally Telegram + an OTA
-//    password). Wi-Fi is NOT set here anymore — it's configured on-device via
+//    password). Wi-Fi is NOT set here anymore; it's configured on-device via
 //    the setup portal (see the Wi-Fi section below); the WIFI_* defines are
 //    legacy and unused.
 // 3. `config.h` is gitignored so your secrets won't be committed.
@@ -15,8 +15,8 @@
 // Wi-Fi (2.4 GHz only)
 //
 // LEGACY / UNUSED: Wi-Fi is now configured on-device via the setup portal
-// (WiFiManager), not from here. On first boot — or any time you hold the FEED
-// button (D25) at reset — the device broadcasts a "BottleFeedLogger-Setup"
+// (WiFiManager), not from here. On first boot, or any time you hold the FEED
+// button (D25) at reset, the device broadcasts a "BottleFeedLogger-Setup"
 // hotspot; join it from a phone and pick your network. Credentials are saved on
 // the device. These two defines are kept only for backward compatibility and are
 // no longer read by the firmware; you can ignore them.
@@ -32,7 +32,7 @@
 //   pio run -e ota -t upload
 //
 // SECURITY: OTA is DISABLED unless you set OTA_PASSWORD below. This is the safe
-// default — unauthenticated OTA would let anyone on your Wi-Fi push firmware to
+// default: unauthenticated OTA would let anyone on your Wi-Fi push firmware to
 // the device (remote code execution). To enable OTA: uncomment OTA_PASSWORD
 // here, and uncomment the matching `upload_flags = --auth=...` in the [env:ota]
 // block of platformio.ini (the two must match).
@@ -44,7 +44,7 @@
 //
 // The device serves a small control page on your Wi-Fi at
 //   http://bottle-feed-logger.local      (or http://<device-ip>)
-// with live weight and Tare / Calibrate / Restart buttons — handy once the case
+// with live weight and Tare / Calibrate / Restart buttons, handy once the case
 // is on and the reset button is unreachable.
 //
 // SECURITY: by default the page and all endpoints are open to anyone on your
@@ -87,7 +87,7 @@
 #define NOTION_DB_ID   "PASTE_YOUR_32CHAR_DATABASE_ID"
 #define NOTION_VERSION "2022-06-28"   // verify current version at developers.notion.com
 
-// Property names — must EXACTLY match your Notion database column names.
+// Property names: must EXACTLY match your Notion database column names.
 #define PROP_TITLE     "Name"
 #define PROP_START     "Start"
 #define PROP_END       "End"
@@ -117,7 +117,7 @@
 // the guided calibration (which saves the real value to flash). Leave as-is.
 //
 // CALIBRATION_KNOWN_WEIGHT_G is just the STARTING value for the reference weight
-// shown during calibration — you can now change it on-device (FEED +10 / TARE
+// shown during calibration; you can now change it on-device (FEED +10 / TARE
 // -10) and your choice is remembered in flash, so no reflash is needed to switch
 // reference weights. 250 g (a measured 250 mL of water) is a convenient default.
 // -----------------------------------------------------------------------------
@@ -133,8 +133,8 @@
 // -----------------------------------------------------------------------------
 // Scale filtering (optional overrides; sensible defaults are built in)
 //
-// The live weight is the MEDIAN of the last SCALE_MEDIAN_SAMPLES raw HX711 reads
-// — a median ignores isolated spikes entirely, which is what kept the old
+// The live weight is the MEDIAN of the last SCALE_MEDIAN_SAMPLES raw HX711 reads.
+// A median ignores isolated spikes entirely, which is what kept the old
 // averaging code from jumping hundreds of grams on a single glitchy read. The
 // reading is treated as "stable" once the spread across that window is within
 // SCALE_STABLE_SPREAD_G grams (tare / calibration / feed-capture wait for this).
