@@ -269,7 +269,7 @@ void setup() {
     bool forcePortal = (digitalRead(BUTTON_PIN) == LOW);
     if (forcePortal) Serial.println(F("FEED held at boot -> forcing WiFi portal"));
     setupWifi(forcePortal);
-    secured.setInsecure();   // v1: skip cert validation (see design-decisions.md)
+    secured.setInsecure();   // v1: skip cert validation (see firmware/README.md TLS note)
 
     // ---- OTA (Wi-Fi firmware updates, no cable needed after this flash) ----
     setupOTA();
