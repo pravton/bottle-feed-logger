@@ -40,6 +40,39 @@
 // #define OTA_PASSWORD  "choose-a-strong-ota-password"
 
 // -----------------------------------------------------------------------------
+// Web control page
+//
+// The device serves a small control page on your Wi-Fi at
+//   http://bottle-feed-logger.local      (or http://<device-ip>)
+// with live weight and Tare / Calibrate / Restart buttons — handy once the case
+// is on and the reset button is unreachable.
+//
+// SECURITY: by default the page and all endpoints are open to anyone on your
+// Wi-Fi. That's fine for a trusted home LAN (the device is not exposed to the
+// Internet). If you set WEB_CONTROL_KEY, the ENTIRE interface requires the key:
+// open it as  http://bottle-feed-logger.local/?key=YOUR-KEY  and the page passes
+// the key automatically on its own requests. Without the key every route returns
+// 403, so the key can't simply be read off an open page.
+// -----------------------------------------------------------------------------
+// #define WEB_CONTROL_KEY  "choose-a-key"
+
+// -----------------------------------------------------------------------------
+// On-device controls (no reset button / case removal needed)
+//
+//   Tap FEED (D25)        -> start / stop a feed
+//   Tap TARE (D26)        -> zero the scale
+//   Hold FEED + TARE 3s   -> guided calibration (pick the known weight on-device:
+//                            FEED = +10 g, TARE = -10 g, then STOP pressing for
+//                            3 s to confirm; no two-button press needed)
+//   Hold TARE alone 4s    -> restart the device
+//   Hold FEED at power-on -> force the Wi-Fi setup portal
+//
+// Calibration works whether the cell reads up or down under load (the saved
+// factor is signed). Re-zero anytime with a TARE tap. To wipe calibration back
+// to defaults, use "Clear calibration" on the web page.
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
 // Notion
 //
 // NOTION_TOKEN: from notion.so/my-integrations -> your integration ->
@@ -63,7 +96,7 @@
 #define PROP_NOTES     "Notes"
 
 // -----------------------------------------------------------------------------
-// Time zone: set the GMT/DST offsets for your region (default below = US/Canada Eastern)
+// Time zone (Barrie, Ontario = Eastern Time)
 //   Standard time is UTC-5; daylight saving adds 1 hour.
 // -----------------------------------------------------------------------------
 #define GMT_OFFSET_SEC  (-5 * 3600)
@@ -83,8 +116,10 @@
 // DEFAULT_CALIBRATION_FACTOR is only used the very first time, before you run
 // the guided calibration (which saves the real value to flash). Leave as-is.
 //
-// CALIBRATION_KNOWN_WEIGHT_G is the weight you'll place during calibration.
-// 250 g (a measured 250 mL of water) is convenient and accurate.
+// CALIBRATION_KNOWN_WEIGHT_G is just the STARTING value for the reference weight
+// shown during calibration — you can now change it on-device (FEED +10 / TARE
+// -10) and your choice is remembered in flash, so no reflash is needed to switch
+// reference weights. 250 g (a measured 250 mL of water) is a convenient default.
 // -----------------------------------------------------------------------------
 #define DEFAULT_CALIBRATION_FACTOR   420.0f
 #define CALIBRATION_KNOWN_WEIGHT_G   250.0f
@@ -96,6 +131,15 @@
 #define MAX_FEED_ML   400.0f
 
 // -----------------------------------------------------------------------------
-// Smoothing — how many HX711 samples to average per reading
+// Scale filtering (optional overrides; sensible defaults are built in)
+//
+// The live weight is the MEDIAN of the last SCALE_MEDIAN_SAMPLES raw HX711 reads
+// — a median ignores isolated spikes entirely, which is what kept the old
+// averaging code from jumping hundreds of grams on a single glitchy read. The
+// reading is treated as "stable" once the spread across that window is within
+// SCALE_STABLE_SPREAD_G grams (tare / calibration / feed-capture wait for this).
+// Raise the sample count for steadier-but-laggier readings; lower it for snappier
+// response. Leave commented to use the defaults (7 samples, 2 g).
 // -----------------------------------------------------------------------------
-#define SAMPLES_PER_READING  10
+// #define SCALE_MEDIAN_SAMPLES   7
+// #define SCALE_STABLE_SPREAD_G  2.0f
