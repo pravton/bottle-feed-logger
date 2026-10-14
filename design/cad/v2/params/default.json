@@ -1,0 +1,1306 @@
+{
+  "schema_version": 2,
+  "meta": {
+    "name": "bottle-feeder-v2",
+    "version": "2.0.0-beta.1",
+    "description": "Infant bottle feeding scale: enclosure, lid, collar and weighing pan",
+    "process_profile": "fdm_prototype",
+    "component_set": "v1_measured"
+  },
+  "_comment": [
+    "role=driving  -> a real input. Change these to resize the design.",
+    "role=derived  -> a formula. Never edit the value, edit the formula.",
+    "role=limit    -> a manufacturing or safety constraint the geometry must respect.",
+    "",
+    "THE CENTRAL IDEA OF V2: the enclosure is sized by its contents.",
+    "V1 hardcoded a 150 x 104 outside and a 140.5 x 94 cavity, which",
+    "over-constrained the wall and produced 4.75 mm on two sides and 5.00 mm on",
+    "the other two. Here the cavity comes from what has to fit inside it, the",
+    "wall is an input, and the outside is derived. Swap to a bigger battery and",
+    "the case grows correctly on its own.",
+    "",
+    "source=measured    -> read off the V1 mesh, see docs/v1-teardown.md",
+    "source=placeholder -> NOT CONFIRMED. Needs the real component datasheet.",
+    "source=design      -> a V2 decision, with the reasoning in the comment."
+  ],
+  "parameters": {
+    "load_cell_hole_spacing": {
+      "role": "driving",
+      "expression": "15 mm",
+      "units": "mm",
+      "min": 10,
+      "max": 40,
+      "source": "measured",
+      "comment": "Centres of the two mounting holes on the fixed end"
+    },
+    "load_cell_screw_dia": {
+      "role": "driving",
+      "expression": "5 mm",
+      "units": "mm",
+      "min": 3,
+      "max": 6,
+      "source": "measured",
+      "comment": "Thread at the load cell's FIXED end, the one screwed down into the base boss from underneath. M5: V1's dia 11 counterbores there leave room for an M5 socket head plus a driver"
+    },
+    "load_cell_length": {
+      "role": "driving",
+      "expression": "80 mm",
+      "units": "mm",
+      "min": 40,
+      "max": 130,
+      "source": "placeholder",
+      "comment": "CONFIRM from the datasheet. Sets how far the pan sits from the boss. Overall bar length; used for clearance checks only. The pan position comes from load_cell_span"
+    },
+    "load_cell_width": {
+      "role": "driving",
+      "expression": "13 mm",
+      "units": "mm",
+      "min": 8,
+      "max": 30,
+      "source": "measured",
+      "comment": "Load cell bar width. Measured"
+    },
+    "load_cell_height": {
+      "role": "driving",
+      "expression": "13 mm",
+      "units": "mm",
+      "min": 8,
+      "max": 30,
+      "source": "measured",
+      "comment": "Load cell bar height. Measured"
+    },
+    "load_cell_deflection": {
+      "role": "driving",
+      "expression": "0.5 mm",
+      "units": "mm",
+      "min": 0.1,
+      "max": 2.0,
+      "source": "placeholder",
+      "comment": "Full-scale deflection of the free end. Sets the clearance gap below"
+    },
+    "display_window_l": {
+      "role": "derived",
+      "expression": "oled_glass_l + 2 * window_clearance",
+      "units": "mm",
+      "comment": "DERIVED from the module. V1 hardcoded 31.0; this gives 31.0 at the stated glass size"
+    },
+    "display_window_w": {
+      "role": "derived",
+      "expression": "oled_glass_w + 2 * window_clearance",
+      "units": "mm",
+      "comment": "DERIVED from the module. V1 hardcoded 19.0; this gives 19.0 at the stated glass size"
+    },
+    "button_dia": {
+      "role": "derived",
+      "expression": "button_bore_dia + 2 * button_cap_lip",
+      "units": "mm",
+      "comment": "DERIVED so cap > bore always holds. V1 measured 18.0"
+    },
+    "button_bore_dia": {
+      "role": "driving",
+      "expression": "13 mm",
+      "units": "mm",
+      "min": 4,
+      "max": 25,
+      "source": "measured",
+      "comment": "Through bore below the cap shoulder"
+    },
+    "button_shoulder_dia": {
+      "role": "derived",
+      "expression": "button_dia + 2 * button_flange",
+      "units": "mm",
+      "comment": "DERIVED so shoulder > cap always holds. V1 measured 21.0"
+    },
+    "button_spacing": {
+      "role": "derived",
+      "expression": "case_w - 2 * wall - button_shoulder_dia - 2 * button_edge_gap",
+      "units": "mm",
+      "comment": "DERIVED, spread across the lid. V1 measured 62.08 in a 104 mm case"
+    },
+    "oled_glass_l": {
+      "role": "driving",
+      "expression": "13 mm",
+      "units": "mm",
+      "min": 8,
+      "max": 20,
+      "source": "measured",
+      "comment": "Visible glass ACROSS the case (X). The OLED is mounted portrait: V1's aperture is 14 x 26, taller than wide, which the finished photo confirms. Range kept below oled_glass_w so the aperture stays portrait"
+    },
+    "oled_glass_w": {
+      "role": "driving",
+      "expression": "25 mm",
+      "units": "mm",
+      "min": 20,
+      "max": 45,
+      "source": "measured",
+      "comment": "Visible glass ALONG the case's short axis (Y). Portrait, so this is the larger of the two"
+    },
+    "window_clearance": {
+      "role": "driving",
+      "expression": "0.5 mm",
+      "units": "mm",
+      "min": 0.0,
+      "max": 2.0,
+      "source": "design",
+      "comment": "Gap around the glass so the aperture never crops the display"
+    },
+    "breadboard_x": {
+      "role": "driving",
+      "expression": "55 mm",
+      "units": "mm",
+      "min": 30,
+      "max": 180,
+      "source": "measured",
+      "comment": "Breadboard extent ALONG the case (X). Half-size 400-point board, short axis. CONFIRM with calipers: this is the single most important measurement now [set by you in Fusion, pulled back into the repo]"
+    },
+    "breadboard_y": {
+      "role": "driving",
+      "expression": "84 mm",
+      "units": "mm",
+      "min": 30,
+      "max": 180,
+      "source": "measured",
+      "comment": "Breadboard extent ACROSS the case (Y), its long axis. The wiring photo shows 30 columns, which is a half-size 400-point board. CONFIRM [set by you in Fusion, pulled back into the repo]"
+    },
+    "breadboard_h": {
+      "role": "driving",
+      "expression": "9.5 mm",
+      "units": "mm",
+      "min": 5,
+      "max": 15,
+      "source": "placeholder",
+      "comment": "Breadboard body height including the adhesive backing. CONFIRM"
+    },
+    "component_stack_h": {
+      "role": "driving",
+      "expression": "1.5 mm",
+      "units": "mm",
+      "min": 5,
+      "max": 30,
+      "source": "placeholder",
+      "comment": "Clearance above the breadboard surface for the tallest module body. Button caps are NOT counted: they pass through the lid rather than sitting under it. 1.5 reproduces V1's measured wall top of 15.5. CONFIRM"
+    },
+    "wall": {
+      "role": "driving",
+      "expression": "2.4 mm",
+      "units": "mm",
+      "min": 1.6,
+      "max": 6.0,
+      "source": "design",
+      "comment": "Uniform on all four sides. V1 used 4.75/5.00 asymmetrically and 5 mm is far more than an enclosure this size needs. Minimum is twice min_wall, because lid_ledge_w takes half the wall"
+    },
+    "floor_t": {
+      "role": "derived",
+      "expression": "(floor_min + (screw_head_h + min_wall) + abs(floor_min - (screw_head_h + min_wall))) / 2",
+      "units": "mm",
+      "comment": "DERIVED: whichever is thicker, the structural floor or enough material to bury the lid screw head and still leave min_wall. The load-cell head sits in the boss, which is far thicker than the floor, so it does not constrain this. The abs() terms are max() written with single-argument functions; Fusion's separator for max() is locale-dependent"
+    },
+    "lid_skin": {
+      "role": "driving",
+      "expression": "2.4 mm",
+      "units": "mm",
+      "min": 1.0,
+      "max": 5.0,
+      "source": "design",
+      "comment": "V1 used 1.00 mm over a 150 x 104 span and it bows. See teardown issue 1"
+    },
+    "rib_wall": {
+      "role": "derived",
+      "expression": "wall * 0.6",
+      "units": "mm",
+      "comment": "Ribs at 60% of nominal wall so they stiffen without causing sink marks when moulded"
+    },
+    "lid_rib_depth": {
+      "role": "driving",
+      "expression": "6 mm",
+      "units": "mm",
+      "min": 0,
+      "max": 15,
+      "source": "design",
+      "comment": "Stiffening ribs on the lid underside. The real fix for the bowing"
+    },
+    "clearance_component": {
+      "role": "driving",
+      "expression": "1.5 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 5.0,
+      "source": "design",
+      "comment": "Gap around each internal component, for assembly and wiring"
+    },
+    "fit_lid": {
+      "role": "driving",
+      "expression": "0.15 mm",
+      "units": "mm",
+      "min": 0.0,
+      "max": 0.6,
+      "source": "process",
+      "comment": "Lid to rebate clearance. Overridden by process profile"
+    },
+    "fit_slip": {
+      "role": "driving",
+      "expression": "0.25 mm",
+      "units": "mm",
+      "min": 0.05,
+      "max": 0.8,
+      "source": "process",
+      "comment": "General sliding clearance. Minimum is non-zero: a zero-clearance hole is a line-to-line fit, which no printed or moulded part will pass a screw through"
+    },
+    "fit_press": {
+      "role": "driving",
+      "expression": "-0.05 mm",
+      "units": "mm",
+      "min": -0.2,
+      "max": -0.02,
+      "source": "process",
+      "comment": "Interference for press fits. Negative by definition. Maximum is strictly negative: zero interference is a slip fit, and a collar that slips is free to lean on the pan and short the load path"
+    },
+    "cavity_h": {
+      "role": "derived",
+      "expression": "breadboard_h + component_stack_h + clearance_component",
+      "units": "mm",
+      "comment": "Breadboard plus whatever stands on it. The button caps are the tallest, and they have to reach the lid"
+    },
+    "case_l": {
+      "role": "derived",
+      "expression": "(cavity_min_l + 2 * wall + footprint_l + abs(cavity_min_l + 2 * wall - footprint_l)) / 2",
+      "units": "mm",
+      "comment": "Whichever governs: fitting the electronics, or not tipping over. Along the case, stability wins comfortably. Across it the two are almost tied (electronics 91.8, stability 92.0 at stability_margin_w 1), so a small change can flip which one controls the width"
+    },
+    "case_w": {
+      "role": "derived",
+      "expression": "(cavity_min_w + 2 * wall + footprint_w + abs(cavity_min_w + 2 * wall - footprint_w)) / 2",
+      "units": "mm",
+      "comment": "Whichever governs: fitting the electronics, or not tipping over. The abs() term is max(a,b) written with a single-argument function, because Fusion's argument separator for max() is locale-dependent and this form is not"
+    },
+    "wall_top_z": {
+      "role": "derived",
+      "expression": "floor_t + cavity_h",
+      "units": "mm",
+      "comment": "Height the lid seats at"
+    },
+    "case_h": {
+      "role": "derived",
+      "expression": "wall_top_z + lid_skin + lid_rib_depth",
+      "units": "mm",
+      "comment": "Overall, excluding the load-cell boss and pan"
+    },
+    "lid_rebate_depth": {
+      "role": "driving",
+      "expression": "1.5 mm",
+      "units": "mm",
+      "min": 0.8,
+      "max": 4.0,
+      "source": "measured",
+      "comment": "Vertical depth the lid spigot drops into the rebate. V1 measured 1.5"
+    },
+    "boss_wall": {
+      "role": "driving",
+      "expression": "1 mm",
+      "units": "mm",
+      "min": 2,
+      "max": 10,
+      "source": "measured",
+      "comment": "Material outside the head counterbore in the boss. 1.0 reproduces V1's measured 28.0 boss length. Thin, but it is only in shear around a buried head"
+    },
+    "boss_l": {
+      "role": "derived",
+      "expression": "load_cell_hole_spacing + load_cell_head_dia + 2 * boss_wall",
+      "units": "mm",
+      "comment": "Sized around the head COUNTERBORE, not the screw: the counterbore is the widest thing that has to fit. Gives exactly V1's measured 28.0"
+    },
+    "boss_w": {
+      "role": "derived",
+      "expression": "load_cell_width + 2 * boss_wall",
+      "units": "mm",
+      "comment": "Boss width, from the confirmed 13 mm cell plus boss_wall each side. V1 measured 17.13: it used more wall across the boss than along it, the same asymmetry as its case wall. V2 keeps boss_wall uniform, recorded as an intentional difference in tests/check_v1_fit.py"
+    },
+    "pan_l": {
+      "role": "derived",
+      "expression": "pan_main_dia / 2 + pan_lobe_offset + pan_lobe_dia / 2",
+      "units": "mm",
+      "comment": "Overall pan length along the case. V1 measured 109.94"
+    },
+    "pan_w": {
+      "role": "derived",
+      "expression": "pan_main_dia",
+      "units": "mm",
+      "comment": "Overall pan width across the case. V1 measured 89.98"
+    },
+    "pan_bore_dia": {
+      "role": "derived",
+      "expression": "load_cell_free_thread + 2 * fit_slip",
+      "units": "mm",
+      "comment": "Clearance hole in the pan. It used to equal the thread diameter exactly, which a printed hole will not pass and which lets the screw grip the pan instead of pulling it down onto the cell"
+    },
+    "bottle_footprint_dia": {
+      "role": "driving",
+      "expression": "75 mm",
+      "units": "mm",
+      "min": 40,
+      "max": 110,
+      "source": "placeholder",
+      "comment": "CONFIRM by measuring the bottles. The pan must not be tippable. Upper limit is set by a solver constraint, not the product: pan_offset_x = boss_offset_x - load_cell_length passes through zero near 120, and a Fusion distance dimension that was drawn non-zero cannot be solved back to exactly zero"
+    },
+    "boss_offset_x": {
+      "role": "derived",
+      "expression": "case_l / 2 - wall - boss_end_gap - boss_l / 2",
+      "units": "mm",
+      "comment": "DERIVED. An absolute offset can always be driven off the end of the case; measuring in from the wall cannot. V1 sat at 57.5 in a 150 mm case"
+    },
+    "display_offset_x": {
+      "role": "derived",
+      "expression": "-(case_l / 2 - wall - display_edge_gap - display_span / 2)",
+      "units": "mm",
+      "comment": "DERIVED, in from the end wall, clearing whichever display feature is widest. V1 sat at -53"
+    },
+    "display_offset_y": {
+      "role": "driving",
+      "expression": "0 mm",
+      "units": "mm",
+      "min": -50,
+      "max": 50,
+      "source": "measured",
+      "comment": "Display centre from the case centre, short axis. V1 was on the centreline"
+    },
+    "button_offset_x": {
+      "role": "driving",
+      "expression": "-47.5 mm",
+      "units": "mm",
+      "min": -55,
+      "max": 55,
+      "source": "measured",
+      "comment": "Button centres from the case centre. Chosen to reproduce V1's measured position exactly (see docs/v1-teardown.md). Not derived from the display: V1 overlaps them in X and separates them in Y, so an X-only formula cannot express the layout [set by you in Fusion, pulled back into the repo]. Range bounded so a button cannot be driven into a corner standoff"
+    },
+    "lid_ledge_w": {
+      "role": "derived",
+      "expression": "wall / 2",
+      "units": "mm",
+      "comment": "Ledge the lid sits on, half the wall so the remaining rim is the other half. Derived, not driving: a fixed 1.5 mm ledge in V1's 4.75 mm wall is fine, but the same 1.5 mm in V2's thinner wall would leave a rim under min_wall"
+    },
+    "boss_clearance": {
+      "role": "driving",
+      "expression": "1.5 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 3,
+      "source": "design",
+      "comment": "Gap between the load-cell boss and the lid opening it passes through. Must exceed nothing mechanical, but a bigger gap is a bigger spill path"
+    },
+    "pan_counterbore_dia": {
+      "role": "derived",
+      "expression": "free_screw_head_dia + 2 * fit_slip",
+      "units": "mm",
+      "comment": "Sized from the screw head it has to take. Was bore + 3, which came out smaller than any M5 head"
+    },
+    "pan_recess_depth": {
+      "role": "derived",
+      "expression": "pan_plate * pan_recess_frac",
+      "units": "mm",
+      "comment": "DERIVED so it is always shallower than the plate"
+    },
+    "screw_dia": {
+      "role": "driving",
+      "expression": "3 mm",
+      "units": "mm",
+      "min": 2,
+      "max": 4,
+      "source": "design",
+      "comment": "Nominal screw thread. M3 self-tapping into the printed lid boss. Capped at M4: an M6 with two diameters of engagement needs more standoff than the lid has"
+    },
+    "screw_head_dia": {
+      "role": "derived",
+      "expression": "screw_dia * screw_head_ratio",
+      "units": "mm",
+      "comment": "DERIVED so the counterbore is always wider than the clearance hole it surrounds, whatever screw size is chosen"
+    },
+    "screw_head_h": {
+      "role": "driving",
+      "expression": "1.8 mm",
+      "units": "mm",
+      "min": 0.8,
+      "max": 4,
+      "source": "standard",
+      "comment": "Counterbore depth for the lid screw heads: ISO 7380 M3 button head (k = 1.65) plus a small sink. A tall pan head will not fit a 3 mm floor"
+    },
+    "screw_thread_bite": {
+      "role": "driving",
+      "expression": "0.35 mm",
+      "units": "mm",
+      "min": 0.15,
+      "max": 0.8,
+      "source": "design",
+      "comment": "Radial material the thread cuts into the pilot hole. Too little strips, too much splits the boss"
+    },
+    "screw_boss_wall": {
+      "role": "driving",
+      "expression": "2 mm",
+      "units": "mm",
+      "min": 1.0,
+      "max": 5,
+      "source": "design",
+      "comment": "Material around the pilot hole in the lid boss"
+    },
+    "screw_corner_gap": {
+      "role": "driving",
+      "expression": "1 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 8,
+      "source": "design",
+      "comment": "Gap between a screw boss and the cavity wall"
+    },
+    "cable_notch_w": {
+      "role": "driving",
+      "expression": "15 mm",
+      "units": "mm",
+      "min": 5,
+      "max": 40,
+      "source": "measured",
+      "comment": "Width of the cable exit notch. V1 measured X 52..67"
+    },
+    "cable_notch_offset_x": {
+      "role": "derived",
+      "expression": "(case_l / 2 - wall - cable_notch_w / 2) * cable_notch_pos_frac",
+      "units": "mm",
+      "comment": "DERIVED from the space actually available, so it always fits"
+    },
+    "cable_notch_bottom_z": {
+      "role": "derived",
+      "expression": "floor_t + (wall_top_z - floor_t) * cable_notch_height_frac",
+      "units": "mm",
+      "comment": "DERIVED, so the notch floor is always between the case floor and the wall top"
+    },
+    "shroud_gap": {
+      "role": "driving",
+      "expression": "3 mm",
+      "units": "mm",
+      "min": 0.8,
+      "max": 5,
+      "source": "measured",
+      "comment": "Clearance between anything fixed and anything moving, 3 mm each side. Well above the budget minimum (0.5 deflection + 0.3 print + 0.5 alignment), which is what you want here: any contact is a second load path and the cell stops measuring properly"
+    },
+    "collar_wall": {
+      "role": "driving",
+      "expression": "2.4 mm",
+      "units": "mm",
+      "min": 1.2,
+      "max": 5,
+      "source": "design",
+      "comment": "Wall of the fixed collar on the lid"
+    },
+    "chamfer_cutout": {
+      "role": "driving",
+      "expression": "0.6 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 3.0,
+      "source": "design",
+      "comment": "Requested chamfer on the mouth of every user-facing cutout. Breaks the sharp edges the safety spec calls for, and on FDM it hides the first-layer bulge that makes printed holes look ragged. Bounded below by min_edge_radius. Ask for more than the material allows and chamfer_applied clamps it to chamfer_headroom, and the build says so"
+    },
+    "chamfer_leadin": {
+      "role": "derived",
+      "expression": "collar_wall / 4",
+      "units": "mm",
+      "comment": "Lead-in chamfer on the collar spigot. DERIVED from the wall it is cut into: a fixed value large enough to be useful on a thick wall eats straight through a thin one. Functional, not cosmetic: an interference fit with a square leading edge jams or shaves instead of entering"
+    },
+    "min_wall": {
+      "role": "limit",
+      "expression": "1.0 mm",
+      "units": "mm",
+      "source": "dfm",
+      "comment": "Absolute thinnest permitted section"
+    },
+    "min_edge_radius": {
+      "role": "limit",
+      "expression": "0.5 mm",
+      "units": "mm",
+      "source": "safety",
+      "comment": "No accessible edge sharper than this"
+    },
+    "draft_angle": {
+      "role": "limit",
+      "expression": "1.5 deg",
+      "units": "deg",
+      "min": 0.5,
+      "max": 3.0,
+      "source": "dfm",
+      "comment": "Minimum draft on mould-parallel faces. Zero for the FDM profile"
+    },
+    "fillet_external": {
+      "role": "driving",
+      "expression": "2.0 mm",
+      "units": "mm",
+      "min": 1.0,
+      "max": 8.0,
+      "source": "safety",
+      "comment": "Radius on the case's outer vertical corners. Applied last in the timeline, so if the edge references ever break, everything else still rebuilds"
+    },
+    "load_capacity": {
+      "role": "driving",
+      "expression": "1.2",
+      "units": "",
+      "min": 0.3,
+      "max": 5.0,
+      "source": "design",
+      "comment": "kg. Full bottle plus pan plus margin. Must be under the load cell rating"
+    },
+    "load_safety_factor": {
+      "role": "driving",
+      "expression": "4.0",
+      "units": "",
+      "min": 2.0,
+      "max": 8.0,
+      "source": "design",
+      "comment": "Applied to the static case for a consumer product used near an infant"
+    },
+    "cavity_min_l": {
+      "role": "derived",
+      "expression": "breadboard_x + boss_l + 3 * clearance_component",
+      "units": "mm",
+      "comment": "Breadboard at the control end, load-cell boss at the other, clearance between and either side"
+    },
+    "cavity_min_w": {
+      "role": "derived",
+      "expression": "breadboard_y + 2 * clearance_component",
+      "units": "mm",
+      "comment": "The breadboard's long axis runs across the case, so it sets the cavity width"
+    },
+    "stability_margin_l": {
+      "role": "driving",
+      "expression": "20 mm",
+      "units": "mm",
+      "min": 0,
+      "max": 60,
+      "source": "design",
+      "comment": "How far the case must extend beyond the pan on the long axis to resist tipping. V1 used 20. CONFIRM with a tipping test: full bottle at the pan edge, case must not lift. A design choice, not a measurement; whether it actually stops the case tipping is in the verification plan"
+    },
+    "stability_margin_w": {
+      "role": "driving",
+      "expression": "1 mm",
+      "units": "mm",
+      "min": 0,
+      "max": 60,
+      "source": "design",
+      "comment": "Same on the short axis. V1 used 7, much less than the 20 it used lengthwise. CONFIRM which is actually needed [set by you in Fusion, pulled back into the repo]. A design choice, not a measurement; whether it actually stops the case tipping is in the verification plan"
+    },
+    "footprint_l": {
+      "role": "derived",
+      "expression": "pan_l + 2 * stability_margin_l",
+      "units": "mm",
+      "comment": "Footprint the pan and tipping resistance demand, long axis"
+    },
+    "footprint_w": {
+      "role": "derived",
+      "expression": "pan_w + 2 * stability_margin_w",
+      "units": "mm",
+      "comment": "Footprint the pan and tipping resistance demand, short axis"
+    },
+    "cavity_l": {
+      "role": "derived",
+      "expression": "case_l - 2 * wall",
+      "units": "mm",
+      "comment": "Actual cavity, once the case has been sized. Larger than cavity_min_l when stability governs"
+    },
+    "cavity_w": {
+      "role": "derived",
+      "expression": "case_w - 2 * wall",
+      "units": "mm",
+      "comment": "Actual cavity, once the case has been sized"
+    },
+    "lid_rebate_l": {
+      "role": "derived",
+      "expression": "cavity_l + 2 * lid_ledge_w - 2 * fit_lid",
+      "units": "mm",
+      "comment": "Lid spigot length, with the process fit taken out"
+    },
+    "lid_rebate_w": {
+      "role": "derived",
+      "expression": "cavity_w + 2 * lid_ledge_w - 2 * fit_lid",
+      "units": "mm",
+      "comment": "Lid spigot width"
+    },
+    "pan_recess_dia": {
+      "role": "derived",
+      "expression": "bottle_footprint_dia + 2 * fit_slip",
+      "units": "mm",
+      "comment": "Bottle locating recess. Sized off the bottle so it self-centres"
+    },
+    "boss_opening_l": {
+      "role": "derived",
+      "expression": "boss_l + 2 * boss_clearance",
+      "units": "mm",
+      "comment": "Lid opening the load-cell boss passes through"
+    },
+    "boss_opening_w": {
+      "role": "derived",
+      "expression": "boss_w + 2 * boss_clearance",
+      "units": "mm",
+      "comment": "Lid opening the load-cell boss passes through"
+    },
+    "boss_end_gap": {
+      "role": "driving",
+      "expression": "1.1 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 10,
+      "source": "measured",
+      "comment": "Gap between the load-cell boss and the inside of the end wall. Chosen to reproduce V1's measured position exactly (see docs/v1-teardown.md): screw holes land on X +50.0 and +65.0 from centre"
+    },
+    "display_edge_gap": {
+      "role": "driving",
+      "expression": "20.1 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 15,
+      "source": "measured",
+      "comment": "Gap from the end wall to the display aperture. Retuned when the recess was removed so the display stays at the same place on the lid"
+    },
+    "button_edge_gap": {
+      "role": "driving",
+      "expression": "4 mm",
+      "units": "mm",
+      "min": 2,
+      "max": 25,
+      "source": "measured",
+      "comment": "Gap between a button shoulder and the inside of the side wall. Chosen to reproduce V1's measured position exactly (see docs/v1-teardown.md): button spacing lands on 62.084 [set by you in Fusion, pulled back into the repo]"
+    },
+    "button_cap_lip": {
+      "role": "driving",
+      "expression": "0 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 6,
+      "source": "design",
+      "comment": "Radial lip of the button cap over its bore [set by you in Fusion, pulled back into the repo]"
+    },
+    "button_flange": {
+      "role": "driving",
+      "expression": "1.6 mm",
+      "units": "mm",
+      "min": 0.5,
+      "max": 6,
+      "source": "design",
+      "comment": "Radial flange that retains the cap from underneath [set by you in Fusion, pulled back into the repo]"
+    },
+    "pan_margin_w": {
+      "role": "driving",
+      "expression": "7.5 mm",
+      "units": "mm",
+      "min": 5,
+      "max": 50,
+      "source": "measured",
+      "comment": "Pan material beyond the bottle footprint, radially on the main circle. V1: 90 = 75 + 2 x 7.5"
+    },
+    "display_span": {
+      "role": "derived",
+      "expression": "display_window_l",
+      "units": "mm",
+      "comment": "Widest display feature, used to position it. Just the aperture now that the recess is gone"
+    },
+    "pan_gap": {
+      "role": "driving",
+      "expression": "2 mm",
+      "units": "mm",
+      "min": 1,
+      "max": 10,
+      "source": "design",
+      "comment": "Clearance between the lid top and the underside of the pan. Must exceed load_cell_deflection or the pan grounds out on the lid at full scale"
+    },
+    "pan_assembly_z": {
+      "role": "derived",
+      "expression": "cell_top_z + pan_spacer_h",
+      "units": "mm",
+      "comment": "Pan underside, sitting on the cell through the spacer washer"
+    },
+    "pan_offset_x": {
+      "role": "derived",
+      "expression": "boss_offset_x - load_cell_span",
+      "units": "mm",
+      "comment": "Pan centre, at the load cell's free-end mounting hole"
+    },
+    "cut_overshoot": {
+      "role": "driving",
+      "expression": "1 mm",
+      "units": "mm",
+      "min": 0.2,
+      "max": 5,
+      "source": "design",
+      "comment": "How far a through cut overshoots the material it passes through. Cutting exactly to a coincident face is what produces zero-thickness slivers"
+    },
+    "screw_clearance_dia": {
+      "role": "derived",
+      "expression": "screw_dia + 2 * fit_slip",
+      "units": "mm",
+      "comment": "Through hole in the base floor. The screw must pass freely here and grip only in the lid boss, or it jacks the two parts apart instead of pulling them together"
+    },
+    "screw_pilot_dia": {
+      "role": "derived",
+      "expression": "screw_dia - 2 * screw_thread_bite",
+      "units": "mm",
+      "comment": "Pilot hole in the lid boss for a self-tapping screw"
+    },
+    "screw_boss_od": {
+      "role": "derived",
+      "expression": "screw_pilot_dia + 2 * screw_boss_wall",
+      "units": "mm",
+      "comment": "Outside diameter of the lid boss"
+    },
+    "screw_boss_h": {
+      "role": "derived",
+      "expression": "wall_top_z - floor_t - screw_boss_gap",
+      "units": "mm",
+      "comment": "Standoff length, from the lid underside down to short of the floor"
+    },
+    "screw_offset_x": {
+      "role": "derived",
+      "expression": "case_l / 2 - wall - screw_boss_od / 2 - screw_corner_gap",
+      "units": "mm",
+      "comment": "Screw centres, measured in from the wall so they track the case size"
+    },
+    "screw_offset_y": {
+      "role": "derived",
+      "expression": "case_w / 2 - wall - screw_boss_od / 2 - screw_corner_gap",
+      "units": "mm",
+      "comment": "Screw centres, measured in from the wall"
+    },
+    "screw_head_ratio": {
+      "role": "driving",
+      "expression": "2",
+      "units": "",
+      "min": 1.4,
+      "max": 2.6,
+      "source": "design",
+      "comment": "Head diameter as a multiple of thread diameter. About 2 for standard metric pan and countersunk heads. CONFIRM against the actual screw"
+    },
+    "floor_min": {
+      "role": "driving",
+      "expression": "3 mm",
+      "units": "mm",
+      "min": 1.5,
+      "max": 8,
+      "source": "measured",
+      "comment": "Floor thickness the structure wants. V1 measured 3.0"
+    },
+    "cable_notch_h": {
+      "role": "derived",
+      "expression": "wall_top_z + cut_overshoot - cable_notch_bottom_z",
+      "units": "mm",
+      "comment": "Notch runs from its floor up past the wall top, so it is open-topped: the cable lays in during assembly and the lid traps it, rather than having to be threaded through a closed hole"
+    },
+    "cable_notch_z": {
+      "role": "derived",
+      "expression": "(cable_notch_bottom_z + wall_top_z + cut_overshoot) / 2",
+      "units": "mm",
+      "comment": "Notch centre height"
+    },
+    "cable_notch_height_frac": {
+      "role": "driving",
+      "expression": "0.56",
+      "units": "",
+      "min": 0.05,
+      "max": 0.9,
+      "source": "measured",
+      "comment": "Notch floor height, as a fraction of the way from the case floor to the wall top. A fraction rather than an absolute height because any fixed value can end up below the floor or above the wall once the case resizes. 0.56 reproduces V1's measured 10.0 mm at the current wall height"
+    },
+    "cable_notch_pos_frac": {
+      "role": "driving",
+      "expression": "-0.1613",
+      "units": "",
+      "min": -1,
+      "max": 1,
+      "source": "measured",
+      "comment": "Notch centre as a fraction of the space available along the back wall. -1 and +1 put its edge exactly against a corner, so it can never overhang however the case resizes. -0.1613 reproduces V1's measured X 59.5"
+    },
+    "load_cell_span": {
+      "role": "driving",
+      "expression": "38 mm",
+      "units": "mm",
+      "min": 15,
+      "max": 100,
+      "source": "placeholder",
+      "comment": "Centre-to-centre distance between the FIXED-end and FREE-end mounting holes. This, not the overall bar length, is what sets where the pan sits. CONFIRM from the datasheet: using the bar length put the pan on top of the display, which the finished photo shows it does not do"
+    },
+    "pan_lobe_dia": {
+      "role": "driving",
+      "expression": "46 mm",
+      "units": "mm",
+      "min": 15,
+      "max": 90,
+      "source": "measured",
+      "comment": "Diameter of the smaller lobe. Recovered by fitting circles to the V1 pan outline: it matches the measured width at every station to about 1 mm"
+    },
+    "pan_lobe_offset": {
+      "role": "driving",
+      "expression": "42 mm",
+      "units": "mm",
+      "min": 10,
+      "max": 90,
+      "source": "measured",
+      "comment": "Lobe centre from the main circle centre, along the case"
+    },
+    "pan_main_dia": {
+      "role": "derived",
+      "expression": "bottle_footprint_dia + 2 * pan_margin_w",
+      "units": "mm",
+      "comment": "Main circle the bottle stands on. V1 measured 90.0"
+    },
+    "pan_bbox_shift": {
+      "role": "derived",
+      "expression": "pan_l / 2 - pan_main_dia / 2",
+      "units": "mm",
+      "comment": "How far the outline's bounding-box centre sits from the main circle centre. The mount screw is at the main circle centre, not the bbox centre"
+    },
+    "load_cell_head_dia": {
+      "role": "driving",
+      "expression": "11 mm",
+      "units": "mm",
+      "min": 6,
+      "max": 15,
+      "source": "measured",
+      "comment": "Counterbore for the load-cell screw head, entering from underneath. V1 measured 11.0 at both hole positions. Bounded by bridge_max: the counterbore ceiling has to bridge its own diameter"
+    },
+    "load_cell_cbore_depth": {
+      "role": "driving",
+      "expression": "8 mm",
+      "units": "mm",
+      "min": 3,
+      "max": 20,
+      "source": "measured",
+      "comment": "How deep the head counterbore runs up from the underside. V1 measured 8.0, which buries the head well clear of the surface the case stands on"
+    },
+    "load_cell_bore_dia": {
+      "role": "derived",
+      "expression": "load_cell_screw_dia + 2 * fit_slip",
+      "units": "mm",
+      "comment": "Clearance hole for the screw shank, through the floor and the boss. V1 drew 5.0 nominal for an M5, which a printed hole will not pass: the screw must run free here and grip only in the load cell's own threads, or it jacks the cell off its seat instead of pulling it down"
+    },
+    "lid_top_z": {
+      "role": "derived",
+      "expression": "wall_top_z + lid_skin",
+      "units": "mm",
+      "comment": "Top face of the lid"
+    },
+    "cell_seat_z": {
+      "role": "derived",
+      "expression": "floor_t + boss_h",
+      "units": "mm",
+      "comment": "Face the load cell's fixed end bolts down onto"
+    },
+    "cell_top_z": {
+      "role": "derived",
+      "expression": "cell_seat_z + load_cell_height",
+      "units": "mm",
+      "comment": "Upper face of the load cell, which the pan pad rests on"
+    },
+    "overload_gap": {
+      "role": "derived",
+      "expression": "load_cell_deflection * 2",
+      "units": "mm",
+      "comment": "Travel before the collar catches the pan. The cell reads full scale at one deflection, so stopping at two means an overload lands on the collar instead of yielding the cell"
+    },
+    "collar_inner_w": {
+      "role": "derived",
+      "expression": "(load_cell_width + boss_w + abs(load_cell_width - boss_w)) / 2 + 2 * shroud_gap",
+      "units": "mm",
+      "comment": "Opening must clear whichever is wider, the cell or the boss it sits on. The abs() term is max(a,b) as a single-argument function; Fusion's separator for max() is locale-dependent"
+    },
+    "collar_inner_l": {
+      "role": "derived",
+      "expression": "collar_outer_l - 2 * collar_wall",
+      "units": "mm",
+      "comment": "Collar bore length"
+    },
+    "collar_offset_x": {
+      "role": "derived",
+      "expression": "(collar_far_x + collar_near_x) / 2",
+      "units": "mm",
+      "comment": "Collar centre"
+    },
+    "collar_outer_l": {
+      "role": "derived",
+      "expression": "collar_far_x - collar_near_x",
+      "units": "mm",
+      "comment": "Collar outside length, spanning boss to pad and clamped at the case end"
+    },
+    "collar_outer_w": {
+      "role": "derived",
+      "expression": "collar_inner_w + 2 * collar_wall",
+      "units": "mm",
+      "comment": "Collar outside, across the case"
+    },
+    "collar_top_z": {
+      "role": "derived",
+      "expression": "pan_assembly_z - overload_gap",
+      "units": "mm",
+      "comment": "Collar top, sitting one overload gap below the pan"
+    },
+    "collar_h": {
+      "role": "derived",
+      "expression": "collar_top_z - lid_top_z",
+      "units": "mm",
+      "comment": "Collar height above the lid"
+    },
+    "boss_h_min": {
+      "role": "driving",
+      "expression": "20 mm",
+      "units": "mm",
+      "min": 8,
+      "max": 60,
+      "source": "measured",
+      "comment": "Shortest acceptable boss, from lifting the cell clear of the breadboard. V1 measured 20.0"
+    },
+    "collar_min_h": {
+      "role": "driving",
+      "expression": "3 mm",
+      "units": "mm",
+      "min": 1,
+      "max": 15,
+      "source": "design",
+      "comment": "Shortest collar worth having. The boss grows if needed to guarantee at least this much"
+    },
+    "boss_h_needed": {
+      "role": "derived",
+      "expression": "lid_top_z + collar_min_h + overload_gap - pan_spacer_h - load_cell_height - floor_t",
+      "units": "mm",
+      "comment": "Boss height required to put the cell high enough that the collar still stands proud of the lid"
+    },
+    "boss_h": {
+      "role": "derived",
+      "expression": "(boss_h_min + boss_h_needed + abs(boss_h_min - boss_h_needed)) / 2",
+      "units": "mm",
+      "comment": "Whichever is taller: clearing the breadboard, or lifting the cell high enough for the collar to exist. A deep cavity raises the lid, and without this the lid climbs above the cell and the collar inverts. Gives exactly V1's 20.0 at the measured values. The abs() term is max(a,b) as a single-argument function; Fusion's separator for max() is locale-dependent"
+    },
+    "collar_far_x": {
+      "role": "derived",
+      "expression": "(boss_offset_x + boss_l / 2 + shroud_gap + collar_wall + case_l / 2 - abs(boss_offset_x + boss_l / 2 + shroud_gap + collar_wall - case_l / 2)) / 2",
+      "units": "mm",
+      "comment": "Far edge of the collar, clamped to the case end. Without the clamp the collar overhangs the case, because the boss sits close to the wall and the collar adds clearance outboard of it. The abs() term is min(a,b) as a single-argument function; Fusion's separator for min() is locale-dependent"
+    },
+    "collar_near_x": {
+      "role": "derived",
+      "expression": "pan_offset_x - pan_spacer_dia / 2 - shroud_gap - collar_wall",
+      "units": "mm",
+      "comment": "Near edge of the collar, just clear of the spacer washer"
+    },
+    "pan_far_x": {
+      "role": "derived",
+      "expression": "pan_offset_x + pan_lobe_offset + pan_lobe_dia / 2",
+      "units": "mm",
+      "comment": "Far edge of the pan outline"
+    },
+    "pan_near_x": {
+      "role": "derived",
+      "expression": "pan_offset_x - pan_main_dia / 2",
+      "units": "mm",
+      "comment": "Near edge of the pan outline"
+    },
+    "cell_hide_margin": {
+      "role": "driving",
+      "expression": "0.5 mm",
+      "units": "mm",
+      "min": 0.2,
+      "max": 5,
+      "source": "design",
+      "comment": "How far the collar top clears the top of the cell. This is what actually hides it"
+    },
+    "pan_spacer_h": {
+      "role": "derived",
+      "expression": "overload_gap + cell_hide_margin",
+      "units": "mm",
+      "comment": "Washer thickness between the load cell and the pan. DERIVED, not chosen: the collar has to sit below the pan by the overload gap yet still cover the cell, so the spacer must be at least the sum of the two. Replaces a printed pad, which would have held the whole plate off the bed"
+    },
+    "pan_spacer_dia": {
+      "role": "driving",
+      "expression": "20 mm",
+      "units": "mm",
+      "min": 8,
+      "max": 40,
+      "source": "design",
+      "comment": "Washer outside diameter, seating the pan on the cell. A standard washer or a printed disc"
+    },
+    "collar_spigot_wall": {
+      "role": "derived",
+      "expression": "collar_wall / 2",
+      "units": "mm",
+      "comment": "Wall of the spigot that presses into the lid. Half the collar wall, so the other half is left as a flange for the collar to seat on"
+    },
+    "collar_spigot_h": {
+      "role": "derived",
+      "expression": "lid_skin",
+      "units": "mm",
+      "comment": "Spigot depth, exactly through the lid skin. Any deeper and it would foul the cell below"
+    },
+    "lid_opening_l": {
+      "role": "derived",
+      "expression": "collar_inner_l + 2 * collar_spigot_wall",
+      "units": "mm",
+      "comment": "Hole in the lid: the collar bore plus the spigot wall that lines it"
+    },
+    "lid_opening_w": {
+      "role": "derived",
+      "expression": "collar_inner_w + 2 * collar_spigot_wall",
+      "units": "mm",
+      "comment": "Hole in the lid, across"
+    },
+    "collar_spigot_l": {
+      "role": "derived",
+      "expression": "lid_opening_l - 2 * fit_press",
+      "units": "mm",
+      "comment": "Spigot outside. fit_press is negative, so this comes out slightly larger than the hole: that is the interference"
+    },
+    "collar_spigot_w": {
+      "role": "derived",
+      "expression": "lid_opening_w - 2 * fit_press",
+      "units": "mm",
+      "comment": "Spigot outside, across"
+    },
+    "bridge_max": {
+      "role": "limit",
+      "expression": "15 mm",
+      "units": "mm",
+      "source": "dfm",
+      "comment": "Longest unsupported span an FDM bridge may cross. Anything wider needs support, which is what the whole print strategy exists to avoid"
+    },
+    "chamfer_headroom": {
+      "role": "derived",
+      "expression": "(lid_skin + ((screw_head_h + boss_wall - abs(screw_head_h - boss_wall)) / 2) - abs(lid_skin - ((screw_head_h + boss_wall - abs(screw_head_h - boss_wall)) / 2))) / 2",
+      "units": "mm",
+      "comment": "Largest chamfer_cutout the geometry can take: the thinnest material at any chamfered edge. Three constraints, and the third was found by testing rather than by reasoning: the load-cell counterbore sits only boss_wall from the side of its boss, so a chamfer wider than that breaks straight out of it. lid_skin and the counterbore depth alone said 1.80, and the geometry actually failed between 1.20 and 1.50. min() via abs(); Fusion's separator for min() is locale-dependent"
+    },
+    "chamfer_applied": {
+      "role": "derived",
+      "expression": "(chamfer_cutout + chamfer_headroom - abs(chamfer_cutout - chamfer_headroom)) / 2",
+      "units": "mm",
+      "comment": "What the geometry actually uses: your chamfer_cutout, or the most the thinnest material can take, whichever is smaller. Asking for more than fits now gives the largest chamfer that does, and says so, instead of the feature failing and vanishing silently. min() via abs(); Fusion's separator for min() is locale-dependent"
+    },
+    "screw_boss_gap": {
+      "role": "derived",
+      "expression": "(wall_top_z - floor_t) * screw_boss_gap_frac",
+      "units": "mm",
+      "comment": "Gap between the bottom of a lid standoff and the cavity floor. Non-zero on purpose: a standoff that lands on the floor fights the rebate ledge for which one seats the lid, and tolerance decides the winner. Leaving a gap makes the ledge the only seat"
+    },
+    "screw_length_min": {
+      "role": "derived",
+      "expression": "(floor_t - screw_head_h) + screw_boss_gap + screw_engagement_wanted",
+      "units": "mm",
+      "comment": "Shortest lid screw that works: floor left under the head, across the gap, then the engagement the rule of thumb asks for. Previously counted the full floor and so ignored that the head is sunk into it"
+    },
+    "screw_engagement": {
+      "role": "derived",
+      "expression": "screw_boss_h * 0.8",
+      "units": "mm",
+      "comment": "Thread engagement available in the standoff. Compare against screw_dia * 2, the rule of thumb for plastic: the build reports when the standoff is too short to reach it"
+    },
+    "screw_boss_gap_frac": {
+      "role": "driving",
+      "expression": "0.4",
+      "units": "",
+      "min": 0.0,
+      "max": 0.6,
+      "source": "design",
+      "comment": "Gap under the standoff, as a fraction of the cavity depth. A fraction because a fixed 5 mm gap is most of a shallow cavity and nothing in a deep one. 0.4 gives 5.0 mm at the current depth"
+    },
+    "screw_engagement_wanted": {
+      "role": "derived",
+      "expression": "screw_dia * 2",
+      "units": "mm",
+      "comment": "Engagement the rule of thumb asks for in plastic. Advisory, not enforced: with a shallow cavity and a large screw it simply cannot be met, and that is a design trade rather than a defect"
+    },
+    "lid_rib_w": {
+      "role": "driving",
+      "expression": "4 mm",
+      "units": "mm",
+      "min": 1.5,
+      "max": 15,
+      "source": "measured",
+      "comment": "Width of the rib left standing when the lid underside is hollowed. Runs round the perimeter, the collar opening and the display, and forms the islands at the buttons and standoffs"
+    },
+    "lid_pocket_depth": {
+      "role": "derived",
+      "expression": "(lid_pocket_total - lid_skin_remaining + abs(lid_pocket_total - lid_skin_remaining)) / 2",
+      "units": "mm",
+      "comment": "How deep the underside is hollowed. Clamped at zero, so asking to leave more skin than the lid has simply means no hollow rather than a cut through it. max() via abs(); Fusion's separator for max() is locale-dependent"
+    },
+    "lid_skin_remaining": {
+      "role": "derived",
+      "expression": "(lid_skin_target + min_wall + abs(lid_skin_target - min_wall)) / 2",
+      "units": "mm",
+      "comment": "Skin actually left: your target, or the process minimum, whichever is thicker. Switching to the injection profile raises min_wall and the hollow gets shallower on its own. max() via abs(); Fusion's separator for max() is locale-dependent"
+    },
+    "lid_pocket_l": {
+      "role": "derived",
+      "expression": "lid_rebate_l - 2 * lid_rib_w",
+      "units": "mm",
+      "comment": "Hollow extent along the case, inside the perimeter rib"
+    },
+    "lid_pocket_w": {
+      "role": "derived",
+      "expression": "lid_rebate_w - 2 * lid_rib_w",
+      "units": "mm",
+      "comment": "Hollow extent across the case"
+    },
+    "collar_rib_l": {
+      "role": "derived",
+      "expression": "lid_opening_l + 2 * lid_rib_w",
+      "units": "mm",
+      "comment": "Island round the collar opening, leaving a rib"
+    },
+    "collar_rib_w": {
+      "role": "derived",
+      "expression": "lid_opening_w + 2 * lid_rib_w",
+      "units": "mm",
+      "comment": "Island round the collar opening, leaving a rib"
+    },
+    "display_rib_l": {
+      "role": "derived",
+      "expression": "display_window_l + 2 * lid_rib_w",
+      "units": "mm",
+      "comment": "Island round the display aperture"
+    },
+    "display_rib_w": {
+      "role": "derived",
+      "expression": "display_window_w + 2 * lid_rib_w",
+      "units": "mm",
+      "comment": "Island round the display aperture"
+    },
+    "button_boss_dia": {
+      "role": "derived",
+      "expression": "button_bore_dia + 2 * lid_rib_w",
+      "units": "mm",
+      "comment": "Island round each button bore. You drew these at 20.0 and 21.0; deriving them from lid_rib_w makes both 21.0 and keeps them equal"
+    },
+    "lid_skin_target": {
+      "role": "driving",
+      "expression": "0.9 mm",
+      "units": "mm",
+      "min": 0.6,
+      "max": 5.0,
+      "source": "measured",
+      "comment": "Skin you want left over the hollow. Specified directly rather than as a cut depth, because this is the number that matters structurally and a depth that is fine on a thick lid cuts clean through a thin one. 0.9 reproduces what you built"
+    },
+    "lid_pocket_total": {
+      "role": "derived",
+      "expression": "lid_rebate_depth + lid_skin",
+      "units": "mm",
+      "comment": "Total material below the lid top at the spigot: everything the hollow could eat into"
+    },
+    "load_cell_free_thread": {
+      "role": "driving",
+      "expression": "4 mm",
+      "units": "mm",
+      "min": 2,
+      "max": 6,
+      "source": "inferred",
+      "comment": "Thread at the load cell's FREE end, the one the pan screws onto. Inferred as M4 from V1: its pan counterbore is dia 8, which is exactly an M4 pan head and smaller than any M5 head. CONFIRM against the cell"
+    },
+    "free_screw_head_dia": {
+      "role": "driving",
+      "expression": "7.6 mm",
+      "units": "mm",
+      "min": 5,
+      "max": 12,
+      "source": "standard",
+      "comment": "Head of the pan screw: M4 button head, ISO 7380. Chosen for its low head, which has to sink below the bottle locating recess floor"
+    },
+    "free_screw_head_h": {
+      "role": "driving",
+      "expression": "2.2 mm",
+      "units": "mm",
+      "min": 1,
+      "max": 3,
+      "source": "standard",
+      "comment": "Head height of the pan screw, ISO 7380 M4 button head"
+    },
+    "head_sink": {
+      "role": "driving",
+      "expression": "0.3 mm",
+      "units": "mm",
+      "min": 0,
+      "max": 0.6,
+      "source": "design",
+      "comment": "How far a screw head sits below the surface it is sunk into, so it can never stand proud of it"
+    },
+    "pan_cbore_depth": {
+      "role": "derived",
+      "expression": "pan_recess_depth + free_screw_head_h + head_sink",
+      "units": "mm",
+      "comment": "Measured from the pan top. Has to clear the locating recess as well as the head: at the old depth of pan_plate / 2 the head stood about 2 mm proud of the recess floor, so the bottle would have rocked on it"
+    },
+    "pan_under_head": {
+      "role": "derived",
+      "expression": "pan_plate - pan_cbore_depth",
+      "units": "mm",
+      "comment": "Plastic left under the pan screw head"
+    },
+    "metal_engagement_ratio": {
+      "role": "driving",
+      "expression": "1.5",
+      "units": "",
+      "min": 1,
+      "max": 2,
+      "source": "design",
+      "comment": "Thread engagement in the aluminium load cell, as a multiple of screw diameter. Capped at 2: at 3x an M5 wants 15 mm of thread in a 13 mm cell, which cannot exist"
+    },
+    "screw_length_max": {
+      "role": "derived",
+      "expression": "lid_top_z - min_wall - screw_head_h",
+      "units": "mm",
+      "comment": "Longest lid screw before the tip gets within min_wall of the lid top and risks a bump or crack on the visible face"
+    },
+    "cell_fixed_screw_len_min": {
+      "role": "derived",
+      "expression": "cell_seat_z - load_cell_cbore_depth + load_cell_screw_dia * metal_engagement_ratio",
+      "units": "mm",
+      "comment": "Shortest fixed-end screw: plastic between the head seat and the cell, then the thread engagement"
+    },
+    "cell_fixed_screw_len_max": {
+      "role": "derived",
+      "expression": "cell_seat_z - load_cell_cbore_depth + load_cell_height",
+      "units": "mm",
+      "comment": "Longest fixed-end screw: tip flush with the top of the cell"
+    },
+    "pan_screw_len_min": {
+      "role": "derived",
+      "expression": "pan_under_head + pan_spacer_h + load_cell_free_thread * metal_engagement_ratio",
+      "units": "mm",
+      "comment": "Shortest pan screw: plastic under the head, the spacer, then the engagement"
+    },
+    "pan_screw_len_max": {
+      "role": "derived",
+      "expression": "pan_under_head + pan_spacer_h + load_cell_height",
+      "units": "mm",
+      "comment": "Longest pan screw: tip flush with the underside of the cell. Any longer and it heads for the lid, and touching the lid is a second load path"
+    },
+    "pan_plate_min": {
+      "role": "driving",
+      "expression": "5 mm",
+      "units": "mm",
+      "min": 2,
+      "max": 10,
+      "source": "measured",
+      "comment": "Pan plate thickness the stiffness wants. V1 measured 5.0. A flexing pan reads as noise"
+    },
+    "pan_recess_frac": {
+      "role": "driving",
+      "expression": "0.3",
+      "units": "",
+      "min": 0.1,
+      "max": 0.5,
+      "source": "design",
+      "comment": "Locating recess depth as a fraction of the plate. Was a bare 0.3 inside the pan_recess_depth formula, which is the kind of hidden number this model avoids"
+    },
+    "pan_plate_needed": {
+      "role": "derived",
+      "expression": "(free_screw_head_h + head_sink + min_wall) / (1 - pan_recess_frac)",
+      "units": "mm",
+      "comment": "Plate needed to sink the pan screw head below the recess floor and still leave min_wall under it"
+    },
+    "pan_plate": {
+      "role": "derived",
+      "expression": "(pan_plate_min + pan_plate_needed + abs(pan_plate_min - pan_plate_needed)) / 2",
+      "units": "mm",
+      "comment": "DERIVED: the stiffer of the measured plate and what the screw needs. A thinner plate cannot bury the screw head under the locating recess. Gives V1's 5.0 at nominal. max() via abs(); Fusion's separator for max() is locale-dependent"
+    }
+  }
+}

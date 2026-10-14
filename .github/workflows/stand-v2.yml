@@ -1,0 +1,57 @@
+name: Stand V2 model
+
+# The parametric stand in design/cad/v2. These checks need Python only, no
+# Fusion: they resolve the parameter table, build the whole model against a
+# mock Fusion API at nominal and at both limits of every driving parameter,
+# and confirm a stock screw length fits every hole.
+
+on:
+  pull_request:
+    paths:
+      - "design/cad/v2/**"
+      - ".github/workflows/stand-v2.yml"
+  push:
+    branches: [main]
+    paths:
+      - "design/cad/v2/**"
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: design/cad/v2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bundle the Fusion script
+        run: python3 src/bundle.py --no-sweep
+
+      - name: Parameter table and overrides
+        run: python3 tests/test_resolve.py
+
+      - name: Model against the measured V1
+        run: python3 tests/check_v1_fit.py
+
+      - name: Geometry across every parameter range
+        run: python3 tests/test_geometry_mock.py
+
+      - name: Stock screw lengths fit
+        run: python3 tests/fasteners.py --check
+
+      - name: No em dashes
+        run: |
+          python3 - <<'PY'
+          import pathlib, sys
+          bad = [str(p) for p in pathlib.Path(".").rglob("*")
+                 if p.is_file() and "—" in p.read_text(encoding="utf-8", errors="ignore")]
+          print("\n".join(bad) or "none")
+          sys.exit(1 if bad else 0)
+          PY

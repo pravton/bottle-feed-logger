@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "_comment": [
+    "Overrides applied on top of params/default.json. Selecting a profile",
+    "re-tunes every fit and DFM limit at once, so the same nominal model can",
+    "be printed for test and moulded for production without re-modelling.",
+    "Clearance values are starting points: confirm each with a printed or",
+    "moulded fit-test coupon before committing to tooling."
+  ],
+
+  "profiles": {
+
+    "fdm_prototype": {
+      "description": "Desktop FDM, 0.4 mm nozzle. V1 prototype process.",
+      "overrides": {
+        "fit_lid": "0.4 mm",
+        "fit_slip": "0.25 mm",
+        "fit_press": "-0.05 mm",
+        "wall": "2.4 mm",
+        "min_wall": "0.8 mm",
+        "draft_angle": "0 deg"
+      },
+      "notes": [
+        "Wall is a multiple of 0.4 mm extrusion width so perimeters come out whole.",
+        "Spills are the main ingress risk for a scale used at feeding time:",
+        "layer lines make printed surfaces hard to clean; keep spill paths out of the case."
+      ]
+    },
+
+    "sla_verification": {
+      "description": "Resin, for fit and form verification before tooling.",
+      "overrides": {
+        "fit_lid": "0.25 mm",
+        "fit_slip": "0.12 mm",
+        "fit_press": "-0.03 mm",
+        "wall": "2.0 mm",
+        "min_wall": "0.6 mm",
+        "draft_angle": "0 deg"
+      },
+      "notes": [
+        "Tighter fits than FDM. Dimensional and form check only, not for",
+        "user trials: resin is brittle and not food-safe."
+      ]
+    },
+
+    "injection_pp": {
+      "description": "Production. Polypropylene, wipe-clean, impact tough.",
+      "overrides": {
+        "fit_lid": "0.2 mm",
+        "fit_slip": "0.10 mm",
+        "fit_press": "-0.04 mm",
+        "wall": "2.0 mm",
+        "rib_wall": "1.2 mm",
+        "min_wall": "1.0 mm",
+        "draft_angle": "1.5 deg"
+      },
+      "notes": [
+        "Uniform wall is critical: thickness variation causes sink and warp.",
+        "PP shrinks roughly 1.3-2.0%; the toolmaker applies shrinkage, the CAD",
+        "model stays at nominal part size.",
+        "Every mould-parallel face needs draft or the part drags on ejection."
+      ]
+    }
+  }
+}

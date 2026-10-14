@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "_comment": [
+    "A component set is one specific bill of materials: this load cell, this",
+    "display, this board, this battery. Selecting a set overrides the component",
+    "parameters in params/default.json, and because the enclosure is derived",
+    "from its contents, the case resizes itself to suit.",
+    "",
+    "This is the layer that makes the model genuinely reusable. Changing to a",
+    "different display or a bigger battery is a one-line change here, not a",
+    "re-model.",
+    "",
+    "Values marked TO_CONFIRM fall through to the placeholder in default.json.",
+    "A set is only releasable once every entry is confirmed against a real",
+    "datasheet or a measured part."
+  ],
+  "sets": {
+    "v1_measured": {
+      "description": "Confirmed BOM from the build log at buildlog.pravton.com/projects/bottle-feed-logger. Enclosure features are measured from the V1 meshes; module envelopes still need calipers.",
+      "source": "mixed",
+      "confirmed_by": null,
+      "confirmed_on": null,
+      "overrides": {
+        "load_cell_hole_spacing": "15 mm",
+        "load_cell_screw_dia": "5 mm",
+        "load_cell_length": "TO_CONFIRM",
+        "load_cell_width": "13 mm",
+        "load_cell_height": "13 mm",
+        "load_cell_deflection": "TO_CONFIRM",
+        "oled_glass_l": "13 mm",
+        "oled_glass_w": "25 mm",
+        "button_bore_dia": "13 mm",
+        "cable_notch_w": "15 mm",
+        "breadboard_x": "55 mm",
+        "breadboard_y": "84 mm",
+        "breadboard_h": "TO_CONFIRM",
+        "component_stack_h": "TO_CONFIRM",
+        "pan_lobe_dia": "46 mm",
+        "pan_lobe_offset": "42 mm",
+        "load_cell_head_dia": "11 mm",
+        "load_cell_cbore_depth": "8 mm"
+      },
+      "notes": [
+        "Confirmed BOM: ESP32 DevKit V1, 1 kg bar load cell, HX711, SSD1306 0.96in OLED,",
+        "two momentary push buttons, USB powered. All mounted on a HALF-SIZE (400 point)",
+        "breadboard, not as loose modules: see the build log gallery.",
+        "",
+        "The OLED is mounted PORTRAIT: V1's aperture is 14 x 26, taller than wide.",
+        "",
+        "breadboard_x / breadboard_y / breadboard_h / component_stack_h are the",
+        "measurements that now matter most: the cavity is sized from the breadboard.",
+        "",
+        "display_bezel is gone: V1 recessed the OLED module into the lid underside, but a blind pocket there gives the module nowhere to enter from. V2 has a plain through aperture and retains the module some other way."
+      ]
+    },
+    "TO_CONFIRM": {
+      "description": "Empty set. Everything falls through to the placeholders in default.json.",
+      "source": "placeholder",
+      "overrides": {}
+    }
+  },
+  "_measurement_protocol": [
+    "For each component, record:",
+    "  L x W x H     maximum envelope including connectors and any heatsink",
+    "  mounting      hole pattern, hole diameter, boss height needed",
+    "  cable exit    which face, and how much bend radius the loom needs",
+    "",
+    "For the load cell specifically, also record:",
+    "  rated capacity        must exceed load_capacity with margin",
+    "  full-scale deflection sets the clearance gap under the free end",
+    "  bar length            sets pan offset from the fixed end",
+    "  thread size and depth on both ends; the free end is often a different",
+    "                        size from the fixed end, which is easy to miss"
+  ]
+}
