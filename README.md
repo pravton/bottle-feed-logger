@@ -36,7 +36,7 @@ or tell it which bottle you're using. Set it down full, feed, set it back down.
 | SSD1306 0.96" OLED (I2C) | 1 | $4–7 |
 | Breadboard + jumper wires | 1 set | $5 |
 | USB power adapter | 1 | $5 |
-| 3D-printed stand | 1 | ~$1 filament |
+| 3D-printed stand (4 parts) + screws | 1 set | ~$2 filament, ~$4 screws |
 
 Full BOM, buying guide, and alternatives: [`bom/`](./bom/).
 
@@ -65,7 +65,7 @@ in [`docs/build-guide.md`](./docs/build-guide.md).
 | [`hardware/`](./hardware/) | Wiring, pinout, assembly |
 | [`software/README.md`](./software/README.md) | Notion integration + database setup |
 | [`bom/`](./bom/) | Bill of materials, buying guide, alternatives |
-| [`design/cad/`](./design/cad/) | 3D-print notes + an OpenSCAD starter stand |
+| [`design/cad/`](./design/cad/) | The V2 stand (a parametric Fusion model), print notes, and an OpenSCAD starter |
 | [`docs/troubleshooting.md`](./docs/troubleshooting.md) | Tuning and fixes |
 | [`docs/safety-notes.md`](./docs/safety-notes.md) | Safety |
 

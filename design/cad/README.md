@@ -1,58 +1,89 @@
-# 3D Design — Stand
+# 3D design: the stand
 
-The stand has two printed parts: a **base** (holds the electronics, sits on the counter) and a **platform** (the bottle sits on this). The load cell bridges them in a cantilever.
+The stand holds the electronics and the load cell, and gives the bottle somewhere
+to sit. There are three ways to get one, from least to most work.
 
-> **If your kit includes the cantilever hardware** (common with 5 kg bar kits: 2 discs + nylon columns + M3 screws), that assembly handles the load-cell mounting, so you may not need precise printed mounting bosses: you mainly need a stable base under the bottom disc and a flat bottle surface on the top disc. The printed parts below are then optional/cosmetic. If you do print, set `cell_hole_dia = 3.4` (M3) in the OpenSCAD file.
+## Option 1: the V2 stand (recommended)
 
-## Two ways to get the stand
+[`v2/`](./v2/) is the stand from the build log photos, as a parametric Fusion
+model: a base for the breadboard and load cell, a lid with the display window and
+two buttons, a collar that hides the load cell, and the pan the bottle sits on.
+Four parts, and all of them print without supports.
 
-### Option A — Remix a MakerWorld model (easiest)
+- **Printable files** (one STL per part, plus an assembly STEP) are attached to
+  each [release](https://github.com/pravton/bottle-feed-logger/releases), not
+  kept in the repo.
+- **How to print each part, which screws to buy, and what has been tested:**
+  [`v2/README.md`](./v2/README.md).
+- **Assembly:** [Assembling the V2 stand](../../hardware/assembly.md#assembling-the-v2-stand).
 
-The mounting geometry is the tricky part, and kitchen-scale models already solve it. Search MakerWorld / Printables / Thingiverse for:
+> **2.0.0-beta.1 is verified in CAD but has not been printed yet.** It is
+> derived from V1, which was printed and used daily. Treat the first print as a
+> test fit.
 
-- `load cell scale stand`
-- `HX711 kitchen scale`
-- `load cell platform 1kg`
-- `bottle scale` / `coffee scale` (coffee-scale builds are basically this project)
+It is sized for a 1 kg bar load cell (13 x 13 mm, M5 thread at one end and M4 at
+the other), a half-size breadboard (55 x 84 mm) and two 12 mm capped buttons. If
+your parts differ, change the parameters and rebuild it in Fusion: every size
+comes from one table, and [`v2/README.md`](./v2/README.md#changing-the-design)
+explains how.
 
-Pick one sized for your **1 kg bar cell** and matching its screw holes. Coffee-scale enclosures are an especially good match — same sensor, same cantilever, similar size.
+## Option 2: remix a scale model
 
-### Option B — Print the included OpenSCAD starter
+The mounting geometry is the tricky part, and kitchen-scale models already solve
+it. Search MakerWorld, Printables or Thingiverse for `load cell scale stand`,
+`HX711 kitchen scale`, `load cell platform 1kg`, or `coffee scale` (coffee-scale
+builds are basically this project). Pick one sized for your **1 kg bar cell** and
+matching its screw holes.
 
-[`bottle-feed-logger-stand.scad`](./bottle-feed-logger-stand.scad) is a parametric base + platform with the cantilever mounting bosses, air gap, a bottle lip, and a channel for the HX711 + wires. **Measure your load cell and set the parameters at the top**, then render and export STLs.
+## Option 3: the OpenSCAD starter
 
-Key parameters to set:
-- `cell_length`, `cell_width`, `cell_height` — your load cell's dimensions
-- `cell_hole_spacing` — distance between the mounting holes on each end
-- `cell_hole_dia` — screw clearance (e.g. M4 ≈ 4.5 mm, M5 ≈ 5.5 mm)
-- `platform_size` — top platform footprint (default 90 mm; fit your bottle base)
-- `air_gap` — clearance so the cell can flex (default 4 mm)
+[`bottle-feed-logger-stand.scad`](./bottle-feed-logger-stand.scad) is a simple
+parametric base and platform with cantilever mounting bosses, an air gap and a
+bottle lip. It is generic and is not maintained alongside V2, but it needs only
+free software, and it is a quick way to fit a load cell with different holes.
+Measure your load cell and set the parameters at the top:
+
+- `cell_length`, `cell_width`, `cell_height`: your load cell's dimensions
+- `cell_hole_spacing`: distance between the mounting holes at each end
+- `cell_hole_dia`: screw clearance, e.g. 4.5 mm for M4, 5.5 mm for M5
+- `platform_size`: top platform footprint (default 90 mm; fit your bottle base)
+- `air_gap`: clearance so the cell can flex (default 4 mm)
+
+> **If your kit includes the cantilever hardware** (common with 5 kg bar kits:
+> two discs, nylon columns and M3 screws), that assembly already handles the
+> load-cell mounting, and any printed parts are mainly a base and a flat top. If
+> you print this starter for it, set `cell_hole_dia = 3.4` (M3).
 
 ## The one rule
 
-However you get the stand, the load cell **must be cantilever-mounted with an air gap** — one end to the base, the other to the platform, nothing supporting the middle. See `hardware/assembly.md` for the diagram. This is the difference between accurate readings and garbage.
+However you get the stand, the load cell **must be mounted as a cantilever with
+an air gap**: one end fixed to the base, the other carrying the platform, nothing
+supporting the middle. And **nothing may touch both sides**: if a cover, a screw
+or a stiff wire bridges the fixed part and the moving part, the scale does not
+fail, it quietly reads low. See [`hardware/assembly.md`](../../hardware/assembly.md).
 
-## Print settings (guidance)
+## Print settings for options 2 and 3
+
+The V2 stand has its own per-part guidance in [`v2/README.md`](./v2/README.md#printing).
 
 | Setting | Value | Why |
 |---------|-------|-----|
-| Material | PLA (or PETG) | PLA is fine indoors; PETG if it'll see warmth/moisture |
+| Material | PLA (or PETG) | PLA is fine indoors; PETG if it will see warmth or moisture |
 | Layer height | 0.2 mm | Standard |
-| Infill | 30–40% | Rigidity matters — a flexy base adds noise |
+| Infill | 30 to 40% | Rigidity matters: a flexing base adds noise |
 | Walls | 3+ perimeters | Stiffness |
-| Supports | Only for the wire channel/overhangs | Mostly support-free |
-| Orientation | Flat faces down | Strength + clean top surface |
+| Supports | Only where the model needs them | |
+| Orientation | Flat faces down | Strength and a clean top surface |
 
 ## Food-contact note
 
-PLA isn't formally food-safe and prints have crevices. Only the **base of the bottle** touches the platform — keep nipples/rims off it. Make the top **wipeable** (smooth top layer, a food-safe sealant, or just set a **silicone coaster** on the platform). See `docs/safety-notes.md`.
+PLA isn't formally food-safe and prints have crevices. Only the **base of the
+bottle** touches the platform; keep nipples and rims off it. Make the top
+**wipeable** (a smooth top layer, ironing, a food-safe sealant, or just a silicone
+coaster on the platform). See [`docs/safety-notes.md`](../../docs/safety-notes.md).
 
 ## Files in this folder
 
-- `README.md` — this file
-- `bottle-feed-logger-stand.scad` — parametric OpenSCAD starter (base + platform)
-- (export your STLs here once rendered)
-
-## Status
-
-Not yet printed. Decide Option A vs B, then print in parallel with the bench build.
+- `README.md`: this file
+- `v2/`: the V2 stand, a parametric Fusion model with its own tests and docs
+- `bottle-feed-logger-stand.scad`: the generic OpenSCAD starter

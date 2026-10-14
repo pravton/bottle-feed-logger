@@ -91,11 +91,11 @@ Verify the volume is within ±5 mL of what you poured (measure the poured water 
 
 ### Step 7 — Print the stand
 
-While bench-testing, print a load-cell scale stand (see `design/cad/README.md` for MakerWorld search terms or the included OpenSCAD starter). The print must give the load cell a **cantilever mount with an air gap** — most scale-stand models do.
+While bench-testing, print the stand. The V2 stand is the recommended option: download the parts from the latest [release](https://github.com/pravton/bottle-feed-logger/releases) and lay each one on the bed as `design/cad/v2/README.md` describes. `design/cad/README.md` also covers remixing a scale model or the OpenSCAD starter. Whatever you print must give the load cell a **cantilever mount with an air gap**, which the V2 stand and most scale-stand models do.
 
 ### Step 8 — Mount everything
 
-Per `hardware/assembly.md`: load cell cantilevered between base and platform, HX711 close by, ESP32 + OLED + button placed for one-handed use. Re-verify the empty stand reads ~0 and your known weight reads correctly after mounting (the mount change can shift the tare — just tap the tare button).
+Per `hardware/assembly.md` (for the V2 stand, the section *Assembling the V2 stand*): load cell cantilevered between base and platform, HX711 close by, ESP32 + OLED + buttons placed for one-handed use. Re-verify the empty stand reads ~0 and your known weight reads correctly after mounting. The mount change can shift the tare, so just tap the tare button.
 
 ### Step 9 — Place it where bottles happen
 

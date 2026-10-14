@@ -108,6 +108,6 @@ If the row doesn't appear, see [`docs/troubleshooting.md`](./docs/troubleshootin
 
 ## Step 6: Print + mount the stand (parallel)
 
-While testing on the breadboard, print a load-cell scale stand (see `design/cad/README.md`). Mount the load cell **cantilever-style** — one end to the base, the other to the platform, with a gap so it can flex. This is the one mechanical detail that matters.
+While testing on the breadboard, print the stand: the V2 parts from the latest release (see `design/cad/README.md`). Mount the load cell **cantilever-style**: one end to the base, the other to the platform, with a gap so it can flex. The V2 stand builds this in; see *Assembling the V2 stand* in `hardware/assembly.md`. This is the one mechanical detail that matters.
 
 You're done. Tap start, feed, tap stop — the log writes itself.

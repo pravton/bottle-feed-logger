@@ -8,7 +8,7 @@ Prices approximate, USD unless noted. `[Needs verification]` = confirm before bu
 
 ### ESP32 development board
 - **Item:** ESP32 DevKit V1 (38-pin)
-- **Qty:** 1 · **Required:** Yes · **Status:** ~$5â8 (commonly on hand)
+- **Qty:** 1 · **Required:** Yes · **Status:** ~$5–8 (commonly on hand)
 - **Notes:** 30-pin variant fine. Avoid S2/C3/CAM unless you adapt the firmware.
 
 ### Load cell
@@ -29,8 +29,8 @@ Prices approximate, USD unless noted. `[Needs verification]` = confirm before bu
 - **Est:** $4–7 · **Notes:** addr usually 0x3C; firmware tries 0x3D too.
 
 ### Button(s)
-- **Item:** Momentary tactile push button (6mm), or a larger arcade-style button for feel
-- **Qty:** 1 (MVP) or 2 (adds tare/calibrate without reflashing)
+- **Item:** 12 x 12 mm momentary tactile button with a round cap. The V2 stand's lid is made for these; a 6 mm button only suits a bare breadboard
+- **Qty:** 1 (MVP) or 2 (adds tare/calibrate without reflashing). The V2 lid has holes for two
 - **Est:** $0.50–2 · **Notes:** internal pull-ups used; no resistor needed.
 
 ---
@@ -46,7 +46,22 @@ Prices approximate, USD unless noted. `[Needs verification]` = confirm before bu
 
 ## 3D printing
 
-- **PLA filament** — ~30–60 g — ~$1 from a spool — for base + platform. (Consider a wipeable top surface or a silicone coaster; see safety-notes.)
+- **PLA filament**: about 100 g, ~$2 from a spool, for the four V2 parts. That is estimated from the part volumes; your slicer gives the real figure. Consider a wipeable top surface or a silicone coaster; see safety-notes.
+
+---
+
+## Fasteners for the V2 stand
+
+Derived from the model by `design/cad/v2/tests/fasteners.py`, so they match the printed parts.
+
+| Qty | Screw | Where |
+|---|---|---|
+| 4 | M3x14 button head (ISO 7380) | Lid to base, from underneath. Self-taps into the printed standoffs |
+| 2 | M5x25 socket head (ISO 4762) | Load cell fixed end into the base boss |
+| 1 | M4x10 button head (ISO 7380) | Pan onto the load cell free end |
+| 1 | Washer, 20 mm OD x 1.5 mm | Spacer between the load cell and the pan |
+
+About $3 to $5 from a hardware shop. Check your load cell's threads first: the stand assumes M5 at the fixed end and M4 at the free end.
 
 ---
 
@@ -63,7 +78,8 @@ Prices approximate, USD unless noted. `[Needs verification]` = confirm before bu
 
 ## Consumables
 
-- M4 / M5 screws for the load cell (often included with the cell)
+- M4 / M5 screws for the load cell (often included with the cell; the V2 stand needs the lengths listed above)
+- Glue (CA or epoxy): a dab to keep the V2 collar in the lid
 - Double-sided tape (mount HX711)
 - Optional: silicone coaster for the platform (wipeable, food-friendly)
 
@@ -86,3 +102,4 @@ Prices approximate, USD unless noted. `[Needs verification]` = confirm before bu
 | New parts beyond an ESP32 + OLED | **~$8–12** |
 | New parts (also buying OLED + breadboard + wires) | ~$20–28 |
 | Phase 2 additions | +$5–25 |
+| V2 stand screws and washer | +$3–5 |
