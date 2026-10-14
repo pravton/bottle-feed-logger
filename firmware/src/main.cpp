@@ -126,6 +126,12 @@ unsigned long lastWifiCheck = 0;
 // held/smoothed weight for a steady display (survives brief HX711 dropouts)
 float         displayGrams    = NAN;
 unsigned long lastGoodReadMs  = 0;
+// Set when the boot-time tare could not read the HX711. loop() retries it as
+// soon as the scale responds, so a slow-starting HX711 doesn't leave the whole
+// session on the stale saved zero. Any successful tare clears it, manual ones
+// included.
+bool          bootTarePending = false;
+unsigned long lastBootTareTry = 0;
 const unsigned long STALE_MS  = 2000;   // show "--" only after this long with no read
 
 // median filter + stability (see sampleScale)
@@ -169,7 +175,7 @@ void   sampleScale();
 long   medianRawBlocking(int n, unsigned long timeoutMs);
 float  rawToGrams(long raw);
 float  captureGrams();
-void   tareRobust();
+bool   tareRobust();
 bool   applyCalibration(float knownG);
 void   clearCalibration();
 bool   waitStable(unsigned long timeoutMs);
@@ -247,8 +253,25 @@ void setup() {
     Serial.printf("Calibration factor: %.3f, known weight: %.0f g, tare offset: %ld\n",
                   calibrationFactor, calKnownWeight, savedOffset);
     scale.set_scale(calibrationFactor);
-    if (savedOffset != 0) scale.set_offset(savedOffset);
-    else                  tareRobust();   // median tare (a stray spike can't poison the zero)
+    // Re-zero on EVERY boot rather than restoring the saved offset. A load cell's
+    // zero-load raw reading drifts between power cycles (temperature, mechanical
+    // settling after travel), so a saved raw zero is stale next boot and shows a
+    // phantom 400-500 g on an empty platform -- the bug behind "after a reboot in
+    // a new place it's way off and only recalibration fixes it" (recalibration's
+    // first step is itself a fresh tare). The span (calibrationFactor) IS stable
+    // across boots, so we keep persisting that; the zero we take fresh.
+    // Note: logged volume = startWeight - endWeight, so the offset cancels and
+    // past feeds were never affected -- only the live display and the on-device
+    // calibration weight-detection. If the HX711 can't be read yet at boot, use
+    // the last saved zero as a stopgap and let loop() retry the tare as soon as
+    // the scale responds, rather than living with the stale zero all session.
+    if (!tareRobust()) {
+        bootTarePending = true;
+        if (savedOffset != 0) {
+            scale.set_offset(savedOffset);
+            Serial.printf("Boot tare failed (HX711 not ready); using last saved offset %ld until a retry succeeds\n", savedOffset);
+        }
+    }
 
     // ---- Restore last feed from flash so the display survives a reboot ----
     lastFeedEnd  = (time_t)prefs.getLong("lastEnd", 0);
@@ -314,6 +337,16 @@ void loop() {
 
     // Buttons (taps + hold-gestures; may block while a gesture runs).
     handleButtons();
+
+    // Retry a boot tare that failed because the HX711 wasn't readable yet. Only
+    // while idle (re-zeroing mid-feed would move the baseline under the feed),
+    // only once the HX711 has a sample ready, and at most every 5 s so a dead
+    // sensor can't stall the loop. tareRobust() clears the flag on success.
+    if (bootTarePending && state == IDLE && scale.is_ready() &&
+        millis() - lastBootTareTry > 5000) {
+        lastBootTareTry = millis();
+        if (tareRobust()) Serial.println(F("Boot tare retried once the HX711 came up"));
+    }
 
     // Sample the scale: one raw read per loop, median-filtered over the last
     // SCALE_MEDIAN_SAMPLES reads so a single HX711 glitch can't move the number.
@@ -453,14 +486,16 @@ bool waitStableLoaded(unsigned long timeoutMs, long minDeltaCounts) {
 
 // Median-based tare: averages out glitches so a stray spike can't poison the
 // zero offset (the old library tare() used a plain mean of 10).
-void tareRobust() {
+bool tareRobust() {
     long med = medianRawBlocking(20, 2000);
-    if (med == LONG_MIN) { Serial.println(F("Tare FAILED: no scale read")); return; }
+    if (med == LONG_MIN) { Serial.println(F("Tare FAILED: no scale read")); return false; }
     scale.set_offset(med);
-    prefs.putLong("tareOffset", med);
+    prefs.putLong("tareOffset", med);   // kept only as a boot fallback (see setup())
     // reset the display filter so it re-converges around the new zero
     resetScaleFilter();
+    bootTarePending = false;   // a real zero now exists; no boot retry needed
     Serial.printf("Tared. offset=%ld\n", med);
+    return true;
 }
 
 // Compute and persist a calibration factor from a known reference weight.
@@ -475,6 +510,20 @@ bool applyCalibration(float knownG) {
     if (med == LONG_MIN) { Serial.println(F("Cal FAILED: no scale read")); return false; }
 
     long value = med - scale.get_offset();        // counts vs empty (signed)
+    // Reject a too-small deflection BEFORE deriving a factor from it. If the
+    // placed weight barely moved the reading, either no weight is on or the cell
+    // is dead / unmounted (can't flex). Saving a factor from that gives a tiny
+    // counts-per-gram (we have seen 2.1) that amplifies normal sensor noise into
+    // tens of grams and makes taring useless -- you zero it and it drifts right
+    // back. Both callers already wait for a load with
+    // waitStableLoaded(CAL_MIN_LOAD_COUNTS), but that checks the live 7-sample
+    // median, and the fresh 20-sample median taken here can still come out
+    // below the floor. Checking again here also covers any future caller.
+    if (labs(value) < CAL_MIN_LOAD_COUNTS) {
+        Serial.printf("Cal FAILED: only %ld counts of deflection (< %d) - is the weight really on? is the cell mounted so it can flex?\n",
+                      value, CAL_MIN_LOAD_COUNTS);
+        return false;
+    }
     float factor = (float)value / knownG;         // counts per gram (signed = direction)
     if (fabsf(factor) < 1.0f || fabsf(factor) > 100000.0f) {
         Serial.printf("Cal FAILED: factor %.2f implausible (delta=%ld counts) - weight on the scale?\n",
@@ -678,7 +727,14 @@ void doCalibration() {
     delay(1500);
     waitStable(4000);           // let the empty reading settle (best-effort)
     drawMessage("Zeroing...", "");
-    tareRobust();
+    if (!tareRobust()) {
+        // Without a fresh zero the next steps would measure against the old
+        // offset, and a stale offset can look like a real load and save a
+        // wrong factor.
+        drawMessage("Zero FAILED", "calib canceled");
+        delay(2500); gestureHintActive = false; forceRedraw();
+        return;
+    }
 
     // ---- Step 2: choose the known reference weight ----
     // FEED = +10 g, TARE = -10 g (hold a button to auto-repeat). CONFIRM simply
@@ -1395,7 +1451,7 @@ function closeCal(){$('#cal').classList.remove('show')}
 function cmsg(t,k){var e=$('#cmsg');e.textContent=t;e.className='cmsg'+(k==1?' ok':k==-1?' err':'')}
 function bump(d){var i=$('#kw');i.value=Math.max(10,(parseInt(i.value)||0)+d);kgTouched=true}
 $('#kw').addEventListener('input',function(){kgTouched=true});
-async function zero(){var b=$('#zbtn');b.disabled=true;b.textContent='Zeroing…';try{await fetch(q('/cal/zero'));$('#s1').classList.add('done');cmsg('Zeroed, now place the weight',1)}catch(e){cmsg('zero failed',-1)}b.textContent='Zero (empty)';b.disabled=false}
+async function zero(){var b=$('#zbtn');b.disabled=true;b.textContent='Zeroing…';try{var r=await fetch(q('/cal/zero'));if(r.ok){$('#s1').classList.add('done');cmsg('Zeroed, now place the weight',1)}else{$('#s1').classList.remove('done');cmsg(await r.text(),-1)}}catch(e){cmsg('zero failed',-1)}b.textContent='Zero (empty)';b.disabled=false}
 async function capture(){var g=parseInt($('#kw').value)||0;if(g<10){cmsg('Set the weight first',-1);return}cmsg('Measuring…',0);try{var t=await (await fetch(q('/cal/capture?g='+g))).text();var ok=t.indexOf('OK')==0;cmsg(t,ok?1:-1);if(ok)$('#s3').classList.add('done')}catch(e){cmsg('capture failed',-1)}}
 async function clearCal(){if(!confirm('Clear calibration back to defaults?'))return;try{var t=await (await fetch(q('/cal/reset'))).text();cmsg(t,1);$('#s1').classList.remove('done');$('#s3').classList.remove('done')}catch(e){cmsg('reset failed',-1)}}
 </script></body></html>)HZ";
@@ -1441,9 +1497,10 @@ void setupWeb() {
         if (!webAuthed()) { server.send(403, "text/plain", "forbidden"); return; }
         if (webRejectIfFeeding()) return;
         drawMessage("Web: taring", "");
-        tareRobust();
+        bool ok = tareRobust();
         forceRedraw();
-        server.send(200, "text/plain", "tared");
+        if (ok) server.send(200, "text/plain", "tared");
+        else    server.send(500, "text/plain", "tare failed: no scale read");
     });
 
     server.on("/restart", HTTP_GET, []() {
@@ -1460,9 +1517,10 @@ void setupWeb() {
         if (!webAuthed()) { server.send(403, "text/plain", "forbidden"); return; }
         if (webRejectIfFeeding()) return;
         drawMessage("Web calibrate", "zeroing...");
-        tareRobust();
+        bool ok = tareRobust();
         forceRedraw();
-        server.send(200, "text/plain", "zeroed - place weight then capture");
+        if (ok) server.send(200, "text/plain", "zeroed - place weight then capture");
+        else    server.send(500, "text/plain", "zero failed: no scale read");
     });
     server.on("/cal/capture", HTTP_GET, []() {
         if (!webAuthed()) { server.send(403, "text/plain", "forbidden"); return; }

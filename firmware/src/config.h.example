@@ -34,8 +34,10 @@
 // SECURITY: OTA is DISABLED unless you set OTA_PASSWORD below. This is the safe
 // default: unauthenticated OTA would let anyone on your Wi-Fi push firmware to
 // the device (remote code execution). To enable OTA: uncomment OTA_PASSWORD
-// here, and uncomment the matching `upload_flags = --auth=...` in the [env:ota]
-// block of platformio.ini (the two must match).
+// here, then export the same value in your shell before each OTA upload.
+// platformio.ini reads it from the environment, so it never lands in git:
+//   export OTA_PASSWORD=choose-a-strong-ota-password
+//   pio run -e ota -t upload
 // -----------------------------------------------------------------------------
 // #define OTA_PASSWORD  "choose-a-strong-ota-password"
 
